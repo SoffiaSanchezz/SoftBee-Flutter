@@ -44,29 +44,32 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       setState(() => _isLoading = true);
-
-      // Preparar datos de apiarios
       final apiariesData =
           _apiaries
               .map(
                 (apiary) => {
-                  "direccion_apiario": apiary.addressController.text.trim(),
+                  "direccion": apiary.addressController.text.trim(),
                   "cantidad_colmenas":
                       int.tryParse(apiary.hiveCountController.text) ?? 0,
                 },
               )
               .toList();
 
-      // Si solo hay un apiario, usar el formato original
+      // Ajusta requestBody
       final requestBody =
           _apiaries.length == 1
               ? {
                 "nombre": nombreCtrl.text.trim(),
                 "correo": correoCtrl.text.trim(),
                 "contraseña": passCtrl.text,
-                "direccion_apiario": _apiaries[0].addressController.text.trim(),
-                "cantidad_colmenas":
-                    int.tryParse(_apiaries[0].hiveCountController.text) ?? 0,
+                "apiarios": [
+                  {
+                    "direccion": _apiaries[0].addressController.text.trim(),
+                    "cantidad_colmenas":
+                        int.tryParse(_apiaries[0].hiveCountController.text) ??
+                        0,
+                  },
+                ],
               }
               : {
                 "nombre": nombreCtrl.text.trim(),
