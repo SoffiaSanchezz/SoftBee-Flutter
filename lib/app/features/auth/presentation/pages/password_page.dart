@@ -1,130 +1,74 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:io'; 
-import 'dart:async';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:soft_bee/app/features/auth/presentation/pages/password_page.dart';
-import 'package:soft_bee/app/features/auth/presentation/pages/register_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
-
+class ForgotPasswordPage extends StatefulWidget {
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
 }
 
-final storage = FlutterSecureStorage();
-
-class _LoginPageState extends State<LoginPage> {
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-
   bool _isLoading = false;
-  bool _isPasswordVisible = false;
-  String? _errorMessage;
+  bool _emailSent = false;
 
-  // Colores personalizados del diseño
+  // Colores personalizados del diseño (mismos que el login)
   static const Color primaryYellow = Color(0xFFFFD100);
   static const Color accentYellow = Color(0xFFFFAB00);
   static const Color lightYellow = Color(0xFFFFF8E1);
   static const Color darkYellow = Color(0xFFF9A825);
   static const Color textDark = Color(0xFF333333);
 
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  void _resetPassword() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+      // Simulación de envío de correo de recuperación
+      await Future.delayed(Duration(seconds: 2));
 
-    // const String url = 'http://192.168.1.10:8000/usuarios/login';
-    const String url = 'http://192.168.6.161:8000/usuarios/login';
+      setState(() {
+        _isLoading = false;
+        _emailSent = true;
+      });
 
-    final Map<String, dynamic> loginData = {
-      "correo": _emailController.text.trim(),
-      "contraseña": _passwordController.text.trim(),
-    };
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Se ha enviado un enlace de recuperación a tu correo',
+                  style: GoogleFonts.poppins(),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
 
-    try {
-      print('Enviando solicitud a: $url');
-      print('Datos: $loginData');
-
-      final response = await http
-          .post(
-            Uri.parse(url),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(loginData),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      print('Respuesta recibida. Status: ${response.statusCode}');
-      print('Cuerpo de la respuesta: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        final accessToken = responseData['access_token'];
-
-        await storage.write(key: 'access_token', value: accessToken);
-
+      // Regresar a la pantalla de login después de 3 segundos
+      Future.delayed(Duration(seconds: 3), () {
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.pop(context);
         }
-      } else if (response.statusCode == 401) {
-        // El servidor respondió con credenciales incorrectas
-        setState(() {
-          _errorMessage = 'Correo o contraseña incorrectos.';
-        });
-      } else if (response.statusCode == 404) {
-        // Usuario no encontrado
-        setState(() {
-          _errorMessage = 'El usuario no está registrado.';
-        });
-      } else {
-        // Otro error inesperado
-        final errorData = jsonDecode(response.body);
-        setState(() {
-          _errorMessage =
-              errorData['detail'] ??
-              'Error del servidor (${response.statusCode})';
-        });
-      }
-    } on SocketException {
-      setState(() {
-        _errorMessage =
-            'No se pudo conectar al servidor. Verifica tu conexión a internet.';
       });
-    } on TimeoutException {
-      setState(() {
-        _errorMessage = 'Tiempo de espera agotado. El servidor no respondió.';
-      });
-    } on http.ClientException catch (e) {
-      setState(() {
-        _errorMessage = 'Error de conexión: ${e.message}';
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Error inesperado: ${e.toString()}';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
-
 
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -222,17 +166,16 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ],
                     ),
-                    child: Image.asset(
-                      '/image/Logo.png', // Reemplaza con la ruta de tu imagen
-                      width: logoSize * 0.6,
-                      height: logoSize * 0.6,
-                      fit: BoxFit.contain,
+                    child: Icon(
+                      Icons.lock_reset,
+                      size: logoSize * 0.5,
+                      color: Colors.white,
                     ),
                   ),
                 ),
                 SizedBox(height: verticalSpacing),
                 Text(
-                  'SoftBee',
+                  'Recuperación',
                   style: GoogleFonts.poppins(
                     fontSize: titleSize,
                     fontWeight: FontWeight.bold,
@@ -252,7 +195,7 @@ class _LoginPageState extends State<LoginPage> {
                     border: Border.all(color: primaryYellow, width: 2),
                   ),
                   child: Text(
-                    'Bienvenido a tu plataforma',
+                    'Recupera el acceso a tu cuenta',
                     style: GoogleFonts.poppins(
                       fontSize: subtitleSize,
                       color: darkYellow,
@@ -276,7 +219,7 @@ class _LoginPageState extends State<LoginPage> {
               child: Center(
                 child: Container(
                   constraints: BoxConstraints(maxWidth: 500),
-                  child: _buildLoginForm(
+                  child: _buildForgotPasswordForm(
                     titleSize * 0.9,
                     subtitleSize,
                     buttonHeight,
@@ -298,8 +241,8 @@ class _LoginPageState extends State<LoginPage> {
     double height,
     bool isSmallScreen,
   ) {
-    final logoSize = width * (isSmallScreen ? 0.25 : 0.1);
-    final titleSize = width * (isSmallScreen ? 0.10 : 0.04);
+    final logoSize = width * (isSmallScreen ? 0.20 : 0.1);
+    final titleSize = width * (isSmallScreen ? 0.06 : 0.04);
     final subtitleSize = width * (isSmallScreen ? 0.04 : 0.02);
     final buttonHeight = height * 0.07;
     final verticalSpacing = height * 0.02;
@@ -310,9 +253,33 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Botón de regreso
+            Align(
+              alignment: Alignment.topLeft,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.arrow_back, color: darkYellow),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+
+            SizedBox(height: verticalSpacing),
+
             // Logo y encabezado
             SizedBox(
-              height: height * 0.35,
+              height: height * 0.3,
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -337,32 +304,32 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ],
                         ),
-                        child: Image.asset(
-                          '/image/Logo.png', // Reemplaza con la ruta de tu imagen
-                          width: logoSize * 0.6,
-                          height: logoSize * 0.6,
-                          fit: BoxFit.contain,
+                        child: Icon(
+                          Icons.lock_reset,
+                          size: logoSize * 0.5,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                     SizedBox(height: verticalSpacing),
                     Text(
-                      'SoftBee',
+                      'Recuperar Contraseña',
                       style: GoogleFonts.poppins(
                         fontSize: titleSize,
                         fontWeight: FontWeight.bold,
                         color: textDark,
                         letterSpacing: 1.2,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
               ),
             ),
 
-            // Formulario de login
-            _buildLoginForm(
-              titleSize * 0.8,
+            // Formulario
+            _buildForgotPasswordForm(
+              titleSize * 0.7,
               subtitleSize,
               buttonHeight,
               verticalSpacing,
@@ -395,60 +362,87 @@ class _LoginPageState extends State<LoginPage> {
     return SingleChildScrollView(
       child: Padding(
         padding: EdgeInsets.all(horizontalPadding),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
           children: [
-            // Columna izquierda: Logo
-            SizedBox(
-              width: width * 0.4,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    height: logoSize,
-                    width: logoSize,
-                    decoration: BoxDecoration(
-                      color: primaryYellow,
-                      borderRadius: BorderRadius.circular(logoSize * 0.25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: darkYellow.withOpacity(0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+            // Botón de regreso
+            Align(
+              alignment: Alignment.topLeft,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                    child: Image.asset(
-                      '/assets/image/Logo.png', 
-                      width: logoSize * 0.6,
-                      height: logoSize * 0.6,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  SizedBox(height: verticalSpacing * 0.5),
-                  Text(
-                    'SoftBee',
-                    style: GoogleFonts.poppins(
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.bold,
-                      color: textDark,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.arrow_back, color: darkYellow),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
             ),
 
-            SizedBox(width: width * 0.05),
+            SizedBox(height: verticalSpacing),
 
-            // Columna derecha: Formulario
-            Expanded(
-              child: _buildLoginForm(
-                titleSize * 0.8,
-                subtitleSize,
-                buttonHeight,
-                verticalSpacing,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Columna izquierda: Logo
+                SizedBox(
+                  width: width * 0.4,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        height: logoSize,
+                        width: logoSize,
+                        decoration: BoxDecoration(
+                          color: primaryYellow,
+                          borderRadius: BorderRadius.circular(logoSize * 0.25),
+                          boxShadow: [
+                            BoxShadow(
+                              color: darkYellow.withOpacity(0.3),
+                              blurRadius: 15,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.lock_reset,
+                          size: logoSize * 0.5,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: verticalSpacing * 0.5),
+                      Text(
+                        'Recuperación',
+                        style: GoogleFonts.poppins(
+                          fontSize: titleSize,
+                          fontWeight: FontWeight.bold,
+                          color: textDark,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(width: width * 0.05),
+
+                // Columna derecha: Formulario
+                Expanded(
+                  child: _buildForgotPasswordForm(
+                    titleSize * 0.8,
+                    subtitleSize,
+                    buttonHeight,
+                    verticalSpacing,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -456,130 +450,114 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Formulario de login reutilizable
-  Widget _buildLoginForm(
+  // Formulario de recuperación reutilizable
+  Widget _buildForgotPasswordForm(
     double titleSize,
     double subtitleSize,
     double buttonHeight,
     double verticalSpacing,
   ) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Iniciar Sesión',
-            style: GoogleFonts.poppins(
-              fontSize: titleSize,
-              fontWeight: FontWeight.bold,
-              color: textDark,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: verticalSpacing),
-
-          // Mostrar error si existe
-          if (_errorMessage != null)
-            Container(
-              padding: EdgeInsets.all(12),
-              margin: EdgeInsets.only(bottom: verticalSpacing),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline, color: Colors.red, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(color: Colors.red.shade700),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // Campo de email
-          _buildTextField(
-            controller: _emailController,
-            label: 'Correo electrónico',
-            hint: 'ejemplo@correo.com',
-            icon: Icons.email_outlined,
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor, ingrese su correo';
-              }
-              if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w]{2,4}$').hasMatch(value)) {
-                return 'Ingrese un correo válido';
-              }
-              return null;
-            },
-          ),
-          SizedBox(height: verticalSpacing),
-
-          // Campo de contraseña
-          _buildTextField(
-            controller: _passwordController,
-            label: 'Contraseña',
-            hint: 'Ingresa tu contraseña',
-            icon: Icons.lock_outline,
-            isPassword: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor, ingrese su contraseña';
-              }
-              return null;
-            },
-          ),
-
-          // Enlace "Olvidé mi contraseña"
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ForgotPasswordPage()),
-                );
-              },
-              style: TextButton.styleFrom(foregroundColor: darkYellow),
-              child: Text(
-                '¿Olvidaste tu contraseña?',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w300,
-                  fontSize: subtitleSize * 0.9,
-                ),
-              ),
-            ),
-          ),
-
-          SizedBox(height: verticalSpacing),
-
-          // Botón de inicio de sesión
-          SizedBox(
-            height: buttonHeight,
-            child: _buildLoginButton(subtitleSize),
-          ),
-
-          SizedBox(height: verticalSpacing),
-
-          // Separador "o"
-          _buildDivider(),
-
-          SizedBox(height: verticalSpacing),
-
-          // Botón de registro
-          SizedBox(
-            height: buttonHeight,
-            child: _buildRegisterButton(subtitleSize),
+    return Container(
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Icono y título
+            Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: lightYellow,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: primaryYellow, width: 2),
+                  ),
+                  child: Icon(
+                    Icons.email_outlined,
+                    size: 32,
+                    color: darkYellow,
+                  ),
+                ),
+                SizedBox(height: verticalSpacing),
+                Text(
+                  'Recuperar Contraseña',
+                  style: GoogleFonts.poppins(
+                    fontSize: titleSize,
+                    fontWeight: FontWeight.bold,
+                    color: textDark,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: verticalSpacing * 0.5),
+                Text(
+                  'Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: subtitleSize,
+                    color: textDark.withOpacity(0.7),
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: verticalSpacing * 1.5),
+
+            // Campo de email
+            _buildTextField(
+              controller: _emailController,
+              label: 'Correo electrónico',
+              hint: 'ejemplo@correo.com',
+              icon: Icons.email_outlined,
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor ingresa tu correo';
+                }
+                if (!RegExp(
+                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                ).hasMatch(value)) {
+                  return 'Ingresa un correo válido';
+                }
+                return null;
+              },
+            ),
+
+            SizedBox(height: verticalSpacing * 1.5),
+
+            // Botón de envío
+            SizedBox(
+              height: buttonHeight,
+              child: _buildSendButton(subtitleSize),
+            ),
+
+            SizedBox(height: verticalSpacing),
+
+            // Separador
+            _buildDivider(),
+
+            SizedBox(height: verticalSpacing),
+
+            // Botón de regreso al login
+            SizedBox(
+              height: buttonHeight * 0.8,
+              child: _buildBackToLoginButton(subtitleSize),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -590,7 +568,6 @@ class _LoginPageState extends State<LoginPage> {
     required String label,
     required String hint,
     required IconData icon,
-    bool isPassword = false,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
@@ -607,7 +584,6 @@ class _LoginPageState extends State<LoginPage> {
       ),
       child: TextFormField(
         controller: controller,
-        obscureText: isPassword && !_isPasswordVisible,
         keyboardType: keyboardType,
         style: const TextStyle(color: textDark),
         decoration: InputDecoration(
@@ -615,22 +591,6 @@ class _LoginPageState extends State<LoginPage> {
           hintText: hint,
           labelStyle: TextStyle(color: darkYellow),
           prefixIcon: Icon(icon, color: primaryYellow),
-          suffixIcon:
-              isPassword
-                  ? IconButton(
-                    icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: primaryYellow,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordVisible = !_isPasswordVisible;
-                      });
-                    },
-                  )
-                  : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -647,7 +607,7 @@ class _LoginPageState extends State<LoginPage> {
             borderSide: const BorderSide(color: primaryYellow, width: 2),
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Colors.grey.shade50,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
             vertical: 16,
@@ -658,8 +618,8 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Widget para el botón de inicio de sesión
-  Widget _buildLoginButton(double fontSize) {
+  // Widget para el botón de envío
+  Widget _buildSendButton(double fontSize) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -677,7 +637,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
       child: ElevatedButton(
-        onPressed: _isLoading ? null : _login,
+        onPressed: (_isLoading || _emailSent) ? null : _resetPassword,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
@@ -700,10 +660,13 @@ class _LoginPageState extends State<LoginPage> {
                 : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.login, size: 20),
+                    Icon(
+                      _emailSent ? Icons.check_circle : Icons.send,
+                      size: 20,
+                    ),
                     const SizedBox(width: 10),
                     Text(
-                      'Iniciar Sesión',
+                      _emailSent ? 'Enlace Enviado' : 'Enviar Enlace',
                       style: GoogleFonts.poppins(
                         fontSize: fontSize,
                         fontWeight: FontWeight.bold,
@@ -748,15 +711,10 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Widget para el botón de registro
-  Widget _buildRegisterButton(double fontSize) {
+  // Widget para el botón de regreso al login
+  Widget _buildBackToLoginButton(double fontSize) {
     return OutlinedButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => RegisterPage()),
-        );
-      },
+      onPressed: () => Navigator.pop(context),
       style: OutlinedButton.styleFrom(
         side: const BorderSide(color: primaryYellow, width: 2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -765,10 +723,10 @@ class _LoginPageState extends State<LoginPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.person_add_outlined, color: darkYellow, size: 20),
+          const Icon(Icons.arrow_back, color: darkYellow, size: 20),
           const SizedBox(width: 8),
           Text(
-            'Crear una cuenta',
+            'Volver al inicio de sesión',
             style: GoogleFonts.poppins(
               color: darkYellow,
               fontWeight: FontWeight.normal,
@@ -784,8 +742,32 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildFooter(double width, double fontSize) {
     return Column(
       children: [
+        Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: lightYellow.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: primaryYellow.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: darkYellow, size: 20),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Si no recibes el correo, revisa tu carpeta de spam o contacta con soporte.',
+                  style: GoogleFonts.poppins(
+                    color: darkYellow,
+                    fontSize: fontSize * 0.8,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 16),
         Text(
-          '© ${DateTime.now().year} Mi App. Todos los derechos reservados.',
+          '© ${DateTime.now().year} SoftBee. Todos los derechos reservados.',
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(
             color: textDark.withOpacity(0.6),

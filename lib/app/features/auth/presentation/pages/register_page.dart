@@ -573,10 +573,11 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ],
                     ),
-                    child: Icon(
-                      Icons.hive,
-                      size: logoSize * 0.5,
-                      color: Colors.white,
+                    child: Image.asset(
+                      '/image/Logo.png', // Reemplaza con la ruta de tu imagen
+                      width: logoSize * 0.6,
+                      height: logoSize * 0.6,
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ),
@@ -660,8 +661,8 @@ class _RegisterPageState extends State<RegisterPage> {
     double height,
     bool isSmallScreen,
   ) {
-    final logoSize = width * (isSmallScreen ? 0.30 : 0.10);
-    final titleSize = width * (isSmallScreen ? 0.06 : 0.05);
+    final logoSize = width * (isSmallScreen ? 0.25 : 0.10);
+    final titleSize = width * (isSmallScreen ? 0.05  : 0.02);
     final subtitleSize = width * (isSmallScreen ? 0.04 : 0.03);
     final verticalSpacing = height * 0.02;
 
@@ -698,10 +699,11 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ],
                         ),
-                        child: Icon(
-                          Icons.hive,
-                          size: logoSize * 0.5,
-                          color: Colors.white,
+                        child: Image.asset(
+                          '/image/Logo.png', // Reemplaza con la ruta de tu imagen
+                          width: logoSize * 0.6,
+                          height: logoSize * 0.6,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),

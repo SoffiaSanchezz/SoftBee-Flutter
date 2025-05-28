@@ -1,5 +1,4 @@
-// models/user.dart
-import 'package:soft_bee/app/features/admin/user/models/apiario_model.dart';
+import 'apiario_model.dart';
 
 class User {
   final int id;
