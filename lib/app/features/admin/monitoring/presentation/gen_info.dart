@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:soft_bee/app/features/admin/monitoring/page/colmena_page.dart';
-import 'package:soft_bee/app/features/admin/monitoring/presentation/gestion_apiario.dart';
-import 'package:soft_bee/app/features/admin/monitoring/presentation/queen_bee.dart';
-
 
 class GenInfo extends StatelessWidget {
   final String colmenaNombre;
@@ -14,6 +10,10 @@ class GenInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth > 1024;
+    final isTablet = screenWidth > 768 && screenWidth <= 1024;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -34,7 +34,7 @@ class GenInfo extends StatelessWidget {
         backgroundColor: Colors.amber[600],
         foregroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true, // Centrar el título
+        centerTitle: true,
         actions: [
           IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {})
               .animate()
@@ -48,14 +48,20 @@ class GenInfo extends StatelessWidget {
       ),
       backgroundColor: const Color(0xFFF9F8F6),
       body: SafeArea(
-        child: Center( // Centrar todo el contenido
+        child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800), // Limitar ancho máximo
+            constraints: BoxConstraints(
+              maxWidth: isDesktop ? 1200 : (isTablet ? 900 : double.infinity),
+            ),
             child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 32 : (isTablet ? 24 : 16),
+                vertical: 16,
+              ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center, // Centrar elementos
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _buildHeader(colmenaNombre)
+                  _buildHeader(colmenaNombre, isDesktop, isTablet)
                       .animate()
                       .fadeIn(duration: 600.ms)
                       .slideY(
@@ -64,36 +70,50 @@ class GenInfo extends StatelessWidget {
                         duration: 600.ms,
                         curve: Curves.easeOutQuad,
                       ),
-                  const SizedBox(height: 20),
-                  _buildInfoSection()
-                      .animate()
-                      .fadeIn(delay: 200.ms, duration: 600.ms)
-                      .slideY(
-                        begin: 0.2,
-                        end: 0,
-                        duration: 600.ms,
-                        curve: Curves.easeOutQuad,
-                      ),
-                  const SizedBox(height: 20),
-                  _buildProductionSection()
-                      .animate()
-                      .fadeIn(delay: 400.ms, duration: 600.ms)
-                      .slideY(
-                        begin: 0.2,
-                        end: 0,
-                        duration: 600.ms,
-                        curve: Curves.easeOutQuad,
-                      ),
-                  const SizedBox(height: 20),
-                  _buildActionsSection(context)
+                  SizedBox(height: isDesktop ? 32 : 20),
+
+                  // Layout responsive: en desktop, mostrar info y producción lado a lado
+                  if (isDesktop)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: _buildInfoSection(isDesktop, isTablet)
+                              .animate()
+                              .fadeIn(delay: 200.ms, duration: 600.ms)
+                              .slideX(begin: -0.2, end: 0),
+                        ),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          flex: 1,
+                          child: _buildProductionSection(isDesktop, isTablet)
+                              .animate()
+                              .fadeIn(delay: 400.ms, duration: 600.ms)
+                              .slideX(begin: 0.2, end: 0),
+                        ),
+                      ],
+                    )
+                  else
+                    Column(
+                      children: [
+                        _buildInfoSection(isDesktop, isTablet)
+                            .animate()
+                            .fadeIn(delay: 200.ms, duration: 600.ms)
+                            .slideY(begin: 0.2, end: 0),
+                        SizedBox(height: isDesktop ? 32 : 20),
+                        _buildProductionSection(isDesktop, isTablet)
+                            .animate()
+                            .fadeIn(delay: 400.ms, duration: 600.ms)
+                            .slideY(begin: 0.2, end: 0),
+                      ],
+                    ),
+
+                  SizedBox(height: isDesktop ? 32 : 20),
+                  _buildActionsSection(context, isDesktop, isTablet)
                       .animate()
                       .fadeIn(delay: 600.ms, duration: 600.ms)
-                      .slideY(
-                        begin: 0.2,
-                        end: 0,
-                        duration: 600.ms,
-                        curve: Curves.easeOutQuad,
-                      ),
+                      .slideY(begin: 0.2, end: 0),
                 ],
               ),
             ),
@@ -103,111 +123,123 @@ class GenInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(String colmenaNombre) {
+  Widget _buildHeader(String colmenaNombre, bool isDesktop, bool isTablet) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isDesktop ? 32 : (isTablet ? 24 : 20)),
       decoration: BoxDecoration(
         color: Colors.amber[600],
+        borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.amber.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
-        children: [ // Centrar contenido del header
+        children: [
+          // Header principal más compacto en desktop
           Row(
-            mainAxisAlignment: MainAxisAlignment.center, // Centrar la fila principal
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                padding: EdgeInsets.all(isDesktop ? 16 : 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(isDesktop ? 16 : 12),
+                ),
+                child: Icon(
+                      Icons.hive,
+                      size: isDesktop ? 40 : 32,
+                      color: Colors.amber[700],
+                    )
+                    .animate(
+                      onPlay: (controller) => controller.repeat(reverse: true),
+                    )
+                    .rotate(begin: -0.05, end: 0.05, duration: 2000.ms),
+              ),
+              SizedBox(width: isDesktop ? 24 : 16),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      colmenaNombre,
+                      style: GoogleFonts.poppins(
+                        fontSize: isDesktop ? 28 : (isTablet ? 26 : 24),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    child: Icon(Icons.hive, size: 32, color: Colors.amber[700])
-                        .animate(
-                          onPlay:
-                              (controller) => controller.repeat(reverse: true),
-                        )
-                        .rotate(
-                          begin: -0.05,
-                          end: 0.05,
-                          duration: 2000.ms,
-                          curve: Curves.easeInOut,
-                        ),
-                  )
-                  .animate()
-                  .fadeIn(duration: 400.ms)
-                  .scale(
-                    begin: const Offset(0.5, 0.5),
-                    end: const Offset(1, 1),
-                  ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center, // Centrar texto
-                children: [
-                  Text(
-                        colmenaNombre,
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        textAlign: TextAlign.center,
-                      )
-                      .animate()
-                      .fadeIn(delay: 200.ms, duration: 400.ms)
-                      .slideX(begin: 0.2, end: 0),
-                  Text(
-                        'Información Detallada',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                        textAlign: TextAlign.center,
-                      )
-                      .animate()
-                      .fadeIn(delay: 300.ms, duration: 400.ms)
-                      .slideX(begin: 0.2, end: 0),
-                ],
+                    Text(
+                      'Información Detallada',
+                      style: GoogleFonts.poppins(
+                        fontSize: isDesktop ? 16 : 14,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          // Estadísticas centradas
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Distribuir uniformemente
-            children: [
-              _buildHeaderStat(
-                    icon: Icons.calendar_today_outlined,
-                    label: 'Última Inspección',
-                    value: '19-09-2024',
-                  )
-                  .animate()
-                  .fadeIn(delay: 400.ms, duration: 500.ms)
-                  .slideY(begin: 0.2, end: 0),
-              _buildHeaderStat(
-                    icon: Icons.eco_outlined,
-                    label: 'Producción',
-                    value: '25 Kg',
-                  )
-                  .animate()
-                  .fadeIn(delay: 500.ms, duration: 500.ms)
-                  .slideY(begin: 0.2, end: 0),
-              _buildHeaderStat(
-                    icon: Icons.favorite_outline,
-                    label: 'Estado',
-                    value: 'Saludable',
-                  )
-                  .animate()
-                  .fadeIn(delay: 600.ms, duration: 500.ms)
-                  .slideY(begin: 0.2, end: 0),
-            ],
-          ),
+          SizedBox(height: isDesktop ? 32 : 20),
+
+          // Estadísticas en grid responsive
+          if (isDesktop)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildHeaderStat(
+                  icon: Icons.calendar_today_outlined,
+                  label: 'Última Inspección',
+                  value: '19-09-2024',
+                  isDesktop: isDesktop,
+                ),
+                _buildHeaderStat(
+                  icon: Icons.eco_outlined,
+                  label: 'Producción',
+                  value: '25 Kg',
+                  isDesktop: isDesktop,
+                ),
+                _buildHeaderStat(
+                  icon: Icons.favorite_outline,
+                  label: 'Estado',
+                  value: 'Saludable',
+                  isDesktop: isDesktop,
+                ),
+              ],
+            )
+          else
+            Wrap(
+              alignment: WrapAlignment.spaceEvenly,
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                _buildHeaderStat(
+                  icon: Icons.calendar_today_outlined,
+                  label: 'Última Inspección',
+                  value: '19-09-2024',
+                  isDesktop: isDesktop,
+                ),
+                _buildHeaderStat(
+                  icon: Icons.eco_outlined,
+                  label: 'Producción',
+                  value: '25 Kg',
+                  isDesktop: isDesktop,
+                ),
+                _buildHeaderStat(
+                  icon: Icons.favorite_outline,
+                  label: 'Estado',
+                  value: 'Saludable',
+                  isDesktop: isDesktop,
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -217,74 +249,68 @@ class GenInfo extends StatelessWidget {
     required IconData icon,
     required String label,
     required String value,
+    required bool isDesktop,
   }) {
-    return Column(
-      children: [
-        Icon(icon, size: 20, color: Colors.white)
-            .animate(onPlay: (controller) => controller.repeat(reverse: true))
-            .scale(
-              begin: const Offset(1, 1),
-              end: const Offset(1.2, 1.2),
-              duration: 1500.ms,
-            ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            color: Colors.white.withOpacity(0.8),
-          ),
-          textAlign: TextAlign.center,
-        ),
-        Text(
-          value,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+    return Container(
+      padding: EdgeInsets.all(isDesktop ? 16 : 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
       child: Column(
-        children: [ // Centrar sección
-          _buildSectionTitle(
-            'Información General',
-            Icons.info_outline,
-          ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2, end: 0),
-          const SizedBox(height: 12),
-          _buildInfoCard()
-              .animate()
-              .fadeIn(delay: 200.ms, duration: 600.ms)
-              .slideY(
-                begin: 0.1,
-                end: 0,
-                duration: 600.ms,
-                curve: Curves.easeOutQuad,
-              ),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: isDesktop ? 24 : 20, color: Colors.white),
+          SizedBox(height: isDesktop ? 8 : 4),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: isDesktop ? 14 : 12,
+              color: Colors.white.withOpacity(0.8),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: isDesktop ? 16 : 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCard() {
+  Widget _buildInfoSection(bool isDesktop, bool isTablet) {
+    return Column(
+      children: [
+        _buildSectionTitle(
+          'Información General',
+          Icons.info_outline,
+          isDesktop,
+        ),
+        SizedBox(height: isDesktop ? 16 : 12),
+        _buildInfoCard(isDesktop, isTablet),
+      ],
+    );
+  }
+
+  Widget _buildInfoCard(bool isDesktop, bool isTablet) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isDesktop ? 24 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
         border: Border.all(color: Colors.amber[200]!, width: 1),
@@ -292,56 +318,45 @@ class GenInfo extends StatelessWidget {
       child: Column(
         children: [
           _buildInfoRow(
-                Icons.groups_outlined,
-                'Población:',
-                'Alta',
-                iconColor: Colors.blue[700]!,
-              )
-              .animate()
-              .fadeIn(delay: 100.ms, duration: 400.ms)
-              .slideX(begin: -0.1, end: 0),
-          const Divider(height: 24),
+            Icons.groups_outlined,
+            'Población:',
+            'Alta',
+            iconColor: Colors.blue[700]!,
+            isDesktop: isDesktop,
+          ),
+          Divider(height: isDesktop ? 32 : 24),
           _buildInfoRow(
-                Icons.favorite_outline,
-                'Estado de la reina:',
-                'Saludable',
-                iconColor: Colors.red[700]!,
-              )
-              .animate()
-              .fadeIn(delay: 200.ms, duration: 400.ms)
-              .slideX(begin: -0.1, end: 0),
-          const Divider(height: 24),
+            Icons.favorite_outline,
+            'Estado de la reina:',
+            'Saludable',
+            iconColor: Colors.red[700]!,
+            isDesktop: isDesktop,
+          ),
+          Divider(height: isDesktop ? 32 : 24),
           _buildInfoRow(
-                Icons.calendar_today_outlined,
-                'Última inspección:',
-                '19-09-2024',
-                iconColor: Colors.green[700]!,
-                isHighlight: true,
-              )
-              .animate()
-              .fadeIn(delay: 300.ms, duration: 400.ms)
-              .slideX(begin: -0.1, end: 0)
-              .shimmer(delay: 800.ms, duration: 1200.ms),
-          const Divider(height: 24),
+            Icons.calendar_today_outlined,
+            'Última inspección:',
+            '19-09-2024',
+            iconColor: Colors.green[700]!,
+            isHighlight: true,
+            isDesktop: isDesktop,
+          ),
+          Divider(height: isDesktop ? 32 : 24),
           _buildInfoRow(
-                Icons.thermostat_outlined,
-                'Temperatura:',
-                '35°C',
-                iconColor: Colors.orange[700]!,
-              )
-              .animate()
-              .fadeIn(delay: 400.ms, duration: 400.ms)
-              .slideX(begin: -0.1, end: 0),
-          const Divider(height: 24),
+            Icons.thermostat_outlined,
+            'Temperatura:',
+            '35°C',
+            iconColor: Colors.orange[700]!,
+            isDesktop: isDesktop,
+          ),
+          Divider(height: isDesktop ? 32 : 24),
           _buildInfoRow(
-                Icons.water_drop_outlined,
-                'Humedad:',
-                '65%',
-                iconColor: Colors.cyan[700]!,
-              )
-              .animate()
-              .fadeIn(delay: 500.ms, duration: 400.ms)
-              .slideX(begin: -0.1, end: 0),
+            Icons.water_drop_outlined,
+            'Humedad:',
+            '65%',
+            iconColor: Colors.cyan[700]!,
+            isDesktop: isDesktop,
+          ),
         ],
       ),
     );
@@ -353,42 +368,38 @@ class GenInfo extends StatelessWidget {
     String value, {
     required Color iconColor,
     bool isHighlight = false,
+    required bool isDesktop,
   }) {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(isDesktop ? 12 : 8),
           decoration: BoxDecoration(
             color: iconColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(isDesktop ? 12 : 8),
           ),
-          child: Icon(icon, color: iconColor, size: 20)
-              .animate(onPlay: (controller) => controller.repeat(reverse: true))
-              .scale(
-                begin: const Offset(1, 1),
-                end: const Offset(1.1, 1.1),
-                duration: 2000.ms,
-              ),
+          child: Icon(icon, color: iconColor, size: isDesktop ? 24 : 20),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: isDesktop ? 20 : 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
+                style: GoogleFonts.poppins(
+                  fontSize: isDesktop ? 16 : 14,
+                  color: Colors.black54,
+                ),
               ),
               Text(
-                    value,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isHighlight ? Colors.amber[800] : Colors.black87,
-                    ),
-                  )
-                  .animate(target: isHighlight ? 1 : 0)
-                  .shimmer(duration: 1500.ms, color: Colors.amber[300]!),
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: isDesktop ? 18 : 16,
+                  fontWeight: FontWeight.bold,
+                  color: isHighlight ? Colors.amber[800] : Colors.black87,
+                ),
+              ),
             ],
           ),
         ),
@@ -396,42 +407,28 @@ class GenInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildProductionSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [ // Centrar sección
-          _buildSectionTitle(
-            'Producción de Miel',
-            Icons.eco_outlined,
-          ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2, end: 0),
-          const SizedBox(height: 12),
-          _buildProductionCard()
-              .animate()
-              .fadeIn(delay: 200.ms, duration: 600.ms)
-              .slideY(
-                begin: 0.1,
-                end: 0,
-                duration: 600.ms,
-                curve: Curves.easeOutQuad,
-              ),
-        ],
-      ),
+  Widget _buildProductionSection(bool isDesktop, bool isTablet) {
+    return Column(
+      children: [
+        _buildSectionTitle('Producción de Miel', Icons.eco_outlined, isDesktop),
+        SizedBox(height: isDesktop ? 16 : 12),
+        _buildProductionCard(isDesktop, isTablet),
+      ],
     );
   }
 
-  Widget _buildProductionCard() {
+  Widget _buildProductionCard(bool isDesktop, bool isTablet) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isDesktop ? 24 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isDesktop ? 20 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
         border: Border.all(color: Colors.amber[200]!, width: 1),
@@ -444,123 +441,114 @@ class GenInfo extends StatelessWidget {
               Text(
                 'Producción Actual',
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: isDesktop ? 20 : 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.amber[50],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.amber[300]!),
-                    ),
-                    child: Text(
-                      '25 Kg',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber[800],
-                      ),
-                    ),
-                  )
-                  .animate()
-                  .fadeIn(duration: 400.ms)
-                  .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1))
-                  .shimmer(delay: 800.ms, duration: 1200.ms),
-            ],
-          ),
-          const SizedBox(height: 20),
-          LinearPercentIndicator(
-                lineHeight: 14,
-                percent: 0.5,
-                backgroundColor: Colors.grey[200],
-                progressColor: Colors.amber[600],
-                barRadius: const Radius.circular(7),
-                animation: true,
-                animationDuration: 1500,
-                leading: const Icon(
-                      Icons.arrow_downward,
-                      size: 16,
-                      color: Colors.grey,
-                    )
-                    .animate()
-                    .fadeIn(delay: 1500.ms)
-                    .scale(
-                      begin: const Offset(0.5, 0.5),
-                      end: const Offset(1, 1),
-                    ),
-                trailing: const Icon(
-                      Icons.arrow_upward,
-                      size: 16,
-                      color: Colors.grey,
-                    )
-                    .animate()
-                    .fadeIn(delay: 1500.ms)
-                    .scale(
-                      begin: const Offset(0.5, 0.5),
-                      end: const Offset(1, 1),
-                    ),
-                center: Text(
-                  '50%',
+                padding: EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 16 : 12,
+                  vertical: isDesktop ? 8 : 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.amber[50],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.amber[300]!),
+                ),
+                child: Text(
+                  '25 Kg',
                   style: GoogleFonts.poppins(
-                    fontSize: 10,
+                    fontSize: isDesktop ? 16 : 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Colors.amber[800],
                   ),
                 ),
-              )
-              .animate()
-              .fadeIn(delay: 400.ms, duration: 800.ms)
-              .slideX(
-                begin: -0.2,
-                end: 0,
-                duration: 800.ms,
-                curve: Curves.easeOutQuad,
               ),
-          const SizedBox(height: 12),
+            ],
+          ),
+          SizedBox(height: isDesktop ? 24 : 20),
+          LinearPercentIndicator(
+            lineHeight: isDesktop ? 18 : 14,
+            percent: 0.5,
+            backgroundColor: Colors.grey[200],
+            progressColor: Colors.amber[600],
+            barRadius: Radius.circular(isDesktop ? 9 : 7),
+            animation: true,
+            animationDuration: 1500,
+            center: Text(
+              '50%',
+              style: GoogleFonts.poppins(
+                fontSize: isDesktop ? 12 : 10,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          SizedBox(height: isDesktop ? 16 : 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Meta: 50 Kg',
-                style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
-              ).animate().fadeIn(delay: 600.ms, duration: 400.ms),
+                style: GoogleFonts.poppins(
+                  fontSize: isDesktop ? 16 : 14,
+                  color: Colors.black54,
+                ),
+              ),
               Text(
                 'Temporada: Primavera 2024',
-                style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
-              ).animate().fadeIn(delay: 700.ms, duration: 400.ms),
+                style: GoogleFonts.poppins(
+                  fontSize: isDesktop ? 16 : 14,
+                  color: Colors.black54,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: isDesktop ? 24 : 20),
           const Divider(),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Centrar estadísticas
-            children: [
-              _buildProductionStat(
-                    label: 'Producción Anterior',
-                    value: '22 Kg',
-                    change: '+3 Kg',
-                    isPositive: true,
-                  )
-                  .animate()
-                  .fadeIn(delay: 800.ms, duration: 500.ms)
-                  .slideY(begin: 0.2, end: 0),
-              _buildProductionStat(
-                    label: 'Promedio Apiario',
-                    value: '20 Kg',
-                    change: '+5 Kg',
-                    isPositive: true,
-                  )
-                  .animate()
-                  .fadeIn(delay: 900.ms, duration: 500.ms)
-                  .slideY(begin: 0.2, end: 0),
-            ],
-          ),
+          SizedBox(height: isDesktop ? 16 : 12),
+
+          // En desktop, mostrar estadísticas en fila; en móvil, en columna
+          if (isDesktop || isTablet)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildProductionStat(
+                  label: 'Producción Anterior',
+                  value: '22 Kg',
+                  change: '+3 Kg',
+                  isPositive: true,
+                  isDesktop: isDesktop,
+                ),
+                _buildProductionStat(
+                  label: 'Promedio Apiario',
+                  value: '20 Kg',
+                  change: '+5 Kg',
+                  isPositive: true,
+                  isDesktop: isDesktop,
+                ),
+              ],
+            )
+          else
+            Column(
+              children: [
+                _buildProductionStat(
+                  label: 'Producción Anterior',
+                  value: '22 Kg',
+                  change: '+3 Kg',
+                  isPositive: true,
+                  isDesktop: isDesktop,
+                ),
+                const SizedBox(height: 16),
+                _buildProductionStat(
+                  label: 'Promedio Apiario',
+                  value: '20 Kg',
+                  change: '+5 Kg',
+                  isPositive: true,
+                  isDesktop: isDesktop,
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -571,196 +559,185 @@ class GenInfo extends StatelessWidget {
     required String value,
     required String change,
     required bool isPositive,
+    required bool isDesktop,
   }) {
+    return Container(
+      padding: EdgeInsets.all(isDesktop ? 16 : 12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: isDesktop ? 16 : 14,
+              color: Colors.black54,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: isDesktop ? 8 : 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: isDesktop ? 18 : 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isPositive ? Colors.green[50] : Colors.red[50],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+                      size: 12,
+                      color: isPositive ? Colors.green[700] : Colors.red[700],
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      change,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isPositive ? Colors.green[700] : Colors.red[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionsSection(
+    BuildContext context,
+    bool isDesktop,
+    bool isTablet,
+  ) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center, // ¡Aquí va!
       children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              value,
+        _buildSectionTitle('Acciones', Icons.touch_app_outlined, isDesktop),
+        SizedBox(height: isDesktop ? 16 : 12),
+
+        // En desktop, mostrar acciones en grid 2x2; en tablet 2x2; en móvil, scroll horizontal
+        if (isDesktop)
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16,
+            runSpacing: 16,
+            children: _buildActionButtons(context, isDesktop),
+          )
+        else if (isTablet)
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
+            children: _buildActionButtons(context, isDesktop),
+          )
+        else
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children:
+                  _buildActionButtons(context, isDesktop)
+                      .map(
+                        (button) => Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: button,
+                        ),
+                      )
+                      .toList(),
+            ),
+          ),
+
+        SizedBox(height: isDesktop ? 32 : 20),
+
+        // Botón de volver
+        SizedBox(
+          width: isDesktop ? 300 : double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[200],
+              foregroundColor: Colors.black87,
+              padding: EdgeInsets.symmetric(vertical: isDesktop ? 16 : 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            icon: const Icon(Icons.arrow_back),
+            label: Text(
+              'Volver al Monitoreo',
               style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
+                fontSize: isDesktop ? 18 : 16,
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isPositive ? Colors.green[50] : Colors.red[50],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                            isPositive
-                                ? Icons.arrow_upward
-                                : Icons.arrow_downward,
-                            size: 12,
-                            color:
-                                isPositive
-                                    ? Colors.green[700]
-                                    : Colors.red[700],
-                          )
-                          .animate(
-                            onPlay:
-                                (controller) =>
-                                    controller.repeat(reverse: true),
-                          )
-                          .moveY(
-                            begin: 0,
-                            end: isPositive ? -2 : 2,
-                            duration: 1000.ms,
-                          ),
-                      const SizedBox(width: 2),
-                      Text(
-                        change,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color:
-                              isPositive ? Colors.green[700] : Colors.red[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-                .animate()
-                .fadeIn(delay: 200.ms)
-                .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1)),
-          ],
+          ),
         ),
+        SizedBox(height: isDesktop ? 40 : 30),
       ],
     );
   }
 
-  Widget _buildActionsSection(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [ // Centrar sección de acciones
-          _buildSectionTitle(
-            'Acciones',
-            Icons.touch_app_outlined,
-          ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2, end: 0),
-          const SizedBox(height: 12),
-          // Acciones en fila horizontal hacia la derecha
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end, // Alinear a la derecha
-              children: [
-                _buildActionButton(
-                      icon: Icons.add_circle_outline,
-                      label: 'Nueva Inspección',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => MonitoreoApiarioScreen(),
-                        ));
-                      },
-                      color: Colors.green[700]!,
-                    )
-                    .animate()
-                    .fadeIn(delay: 200.ms, duration: 500.ms)
-                    .slideX(begin: -0.2, end: 0),
-                const SizedBox(width: 12),
-                _buildActionButton(
-                      icon: Icons.change_circle_outlined,
-                      label: 'Remplazo de Reina',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => QueenReplacementScreen(colmenaNombre: colmenaNombre)
-                          ),
-                        );
-                      },
-                      color: Colors.amber[700]!,
-                    )
-                    .animate()
-                    .fadeIn(delay: 300.ms, duration: 500.ms)
-                    .slideX(begin: 0.2, end: 0),
-                const SizedBox(width: 12),
-                _buildActionButton(
-                      icon: Icons.eco_outlined,
-                      label: 'Registrar Cosecha',
-                      onPressed: () {},
-                      color: Colors.blue[700]!,
-                    )
-                    .animate()
-                    .fadeIn(delay: 400.ms, duration: 500.ms)
-                    .slideX(begin: -0.2, end: 0),
-                const SizedBox(width: 12),
-                _buildActionButton(
-                      icon: Icons.medical_services_outlined,
-                      label: 'Tratamiento',
-                      onPressed: () {},
-                      color: Colors.red[700]!,
-                    )
-                    .animate()
-                    .fadeIn(delay: 500.ms, duration: 500.ms)
-                    .slideX(begin: 0.2, end: 0),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Botón de volver centrado
-          Center(
-            child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[200],
-                      foregroundColor: Colors.black87,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    icon: const Icon(Icons.arrow_back),
-                    label: Text(
-                      'Volver al Monitoreo',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                )
-                .animate()
-                .fadeIn(delay: 600.ms, duration: 600.ms)
-                .slideY(
-                  begin: 0.2,
-                  end: 0,
-                  duration: 600.ms,
-                  curve: Curves.easeOutQuad,
-                )
-                .shimmer(delay: 1200.ms, duration: 1200.ms),
-          ),
-          const SizedBox(height: 30),
-        ],
+  List<Widget> _buildActionButtons(BuildContext context, bool isDesktop) {
+    final buttonWidth = isDesktop ? 140.0 : 120.0;
+
+    return [
+      _buildActionButton(
+        icon: Icons.add_circle_outline,
+        label: 'Nueva Inspección',
+        onPressed: () {
+          // Navigator.push(context, MaterialPageRoute(builder: (context) => MonitoreoApiarioScreen()));
+        },
+        color: Colors.green[700]!,
+        width: buttonWidth,
+        isDesktop: isDesktop,
       ),
-    );
+      _buildActionButton(
+        icon: Icons.change_circle_outlined,
+        label: 'Remplazo de Reina',
+        onPressed: () {
+          // Navigator.push(context, MaterialPageRoute(builder: (context) => QueenReplacementScreen(colmenaNombre: colmenaNombre)));
+        },
+        color: Colors.amber[700]!,
+        width: buttonWidth,
+        isDesktop: isDesktop,
+      ),
+      _buildActionButton(
+        icon: Icons.eco_outlined,
+        label: 'Registrar Cosecha',
+        onPressed: () {},
+        color: Colors.blue[700]!,
+        width: buttonWidth,
+        isDesktop: isDesktop,
+      ),
+      _buildActionButton(
+        icon: Icons.medical_services_outlined,
+        label: 'Tratamiento',
+        onPressed: () {},
+        color: Colors.red[700]!,
+        width: buttonWidth,
+        isDesktop: isDesktop,
+      ),
+    ];
   }
 
   Widget _buildActionButton({
@@ -768,17 +745,22 @@ class GenInfo extends StatelessWidget {
     required String label,
     required VoidCallback onPressed,
     required Color color,
+    required double width,
+    required bool isDesktop,
   }) {
     return SizedBox(
-      width: 120, // Ancho fijo para mantener consistencia
+      width: width,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: color.withOpacity(0.1),
           foregroundColor: color,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          padding: EdgeInsets.symmetric(
+            vertical: isDesktop ? 20 : 16,
+            horizontal: 8,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(isDesktop ? 16 : 12),
             side: BorderSide(color: color.withOpacity(0.3)),
           ),
           elevation: 0,
@@ -786,19 +768,13 @@ class GenInfo extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 24)
-                .animate(onPlay: (controller) => controller.repeat(reverse: true))
-                .scale(
-                  begin: const Offset(1, 1),
-                  end: const Offset(1.2, 1.2),
-                  duration: 1500.ms,
-                ),
-            const SizedBox(height: 8),
+            Icon(icon, size: isDesktop ? 28 : 24),
+            SizedBox(height: isDesktop ? 12 : 8),
             Text(
               label,
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
-                fontSize: 11,
+                fontSize: isDesktop ? 13 : 11,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
@@ -810,26 +786,20 @@ class GenInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title, IconData icon) {
+  Widget _buildSectionTitle(String title, IconData icon, bool isDesktop) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center, // Centrar títulos de sección
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, size: 20, color: Colors.amber[800])
-            .animate()
-            .fadeIn(duration: 300.ms)
-            .scale(begin: const Offset(0.5, 0.5), end: const Offset(1, 1)),
-        const SizedBox(width: 8),
+        Icon(icon, size: isDesktop ? 24 : 20, color: Colors.amber[800]),
+        SizedBox(width: isDesktop ? 12 : 8),
         Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.amber[800],
-              ),
-            )
-            .animate()
-            .fadeIn(delay: 100.ms, duration: 300.ms)
-            .slideX(begin: 0.2, end: 0),
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: isDesktop ? 22 : 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.amber[800],
+          ),
+        ),
       ],
     );
   }

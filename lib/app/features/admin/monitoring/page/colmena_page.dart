@@ -5,6 +5,7 @@ import 'package:soft_bee/app/features/admin/monitoring/presentation/gen_info.dar
 import 'package:soft_bee/app/features/admin/monitoring/presentation/gestion_apiario.dart';
 import 'package:soft_bee/app/features/admin/monitoring/presentation/queen_bee.dart';
 
+
 class MonitoreoColmenas extends StatefulWidget {
   const MonitoreoColmenas({super.key});
 

@@ -2,6 +2,56 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+// Enum para definir los tipos de pantalla
+enum ScreenType { mobile, tablet, desktop }
+
+// Clase para manejar breakpoints responsivos
+class ResponsiveBreakpoints {
+  static const double mobile = 600;
+  static const double tablet = 1250;
+  static const double desktop = 1400;
+
+  static ScreenType getScreenType(double width) {
+    if (width < mobile) return ScreenType.mobile;
+    if (width < desktop) return ScreenType.tablet;
+    return ScreenType.desktop;
+  }
+}
+
+// Widget responsivo principal
+class ResponsiveLayout extends StatelessWidget {
+  final Widget mobile;
+  final Widget? tablet;
+  final Widget desktop;
+
+  const ResponsiveLayout({
+    Key? key,
+    required this.mobile,
+    this.tablet,
+    required this.desktop,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenType = ResponsiveBreakpoints.getScreenType(
+          constraints.maxWidth,
+        );
+
+        switch (screenType) {
+          case ScreenType.mobile:
+            return mobile;
+          case ScreenType.tablet:
+            return tablet ?? desktop;
+          case ScreenType.desktop:
+            return desktop;
+        }
+      },
+    );
+  }
+}
+
 class GestionInventario extends StatefulWidget {
   final List<Map<String, dynamic>> insumos;
   final Function(List<Map<String, dynamic>>) onInsumosChanged;
@@ -435,348 +485,682 @@ class _GestionInventarioState extends State<GestionInventario>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        color: Color(0xFFFFF8E1),
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.amber, Colors.amber[600]!],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Gestión de Inventario',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Text(
-                                'Administra tus insumos de apiario',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.white.withOpacity(0.9),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${widget.insumos.length}',
-                            style: GoogleFonts.poppins(
-                              color: Colors.amber[700],
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
+      body: ResponsiveLayout(
+        mobile: _buildMobileLayout(),
+        tablet: _buildTabletLayout(),
+        desktop: _buildDesktopLayout(),
+      ),
+    );
+  }
 
-            // Barra de búsqueda y botón agregar
-            Padding(
+  // Layout para móviles (diseño actual)
+  Widget _buildMobileLayout() {
+    return Container(
+      color: Color(0xFFFFF8E1),
+      child: Column(
+        children: [
+          _buildHeader(ScreenType.mobile),
+          _buildSearchAndAddSection(ScreenType.mobile),
+          Expanded(child: _buildListaInsumos(ScreenType.mobile)),
+        ],
+      ),
+    );
+  }
+
+  // Layout para tablets
+  Widget _buildTabletLayout() {
+    return Container(
+      color: Color(0xFFFFF8E1),
+      child: Column(
+        children: [
+          _buildHeader(ScreenType.tablet),
+          Expanded(
+            child: Padding(
               padding: EdgeInsets.all(16),
-              child: Column(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber[200]!),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
+                  // Panel lateral con información
+                  Container(width: 280, child: _buildSidePanel()),
+                  SizedBox(width: 16),
+                  // Contenido principal
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _buildSearchAndAddSection(ScreenType.tablet),
+                        SizedBox(height: 16),
+                        Expanded(child: _buildListaInsumos(ScreenType.tablet)),
                       ],
-                    ),
-                    child: TextField(
-                      controller: searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Buscar insumo...',
-                        hintStyle: GoogleFonts.poppins(color: Colors.grey[500]),
-                        prefixIcon: Icon(Icons.search, color: Colors.amber),
-                        suffixIcon:
-                            searchController.text.isNotEmpty
-                                ? IconButton(
-                                  icon: Icon(Icons.clear, color: Colors.grey),
-                                  onPressed: () {
-                                    setState(() {
-                                      searchController.clear();
-                                    });
-                                  },
-                                )
-                                : null,
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      onChanged: (value) {
-                        setState(() {});
-                      },
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      icon: Icon(Icons.add, size: 20),
-                      label: Text(
-                        'Agregar Nuevo Insumo',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
-                      ),
-                      onPressed: () {
-                        _limpiarFormulario();
-                        _mostrarDialogoAgregar();
-                      },
                     ),
                   ),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Lista de insumos
-            Expanded(child: _buildListaInsumos()),
+  // Layout para desktop
+  Widget _buildDesktopLayout() {
+    return Container(
+      color: Color(0xFFFFF8E1),
+      child: Column(
+        children: [
+          _buildHeader(ScreenType.desktop),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Panel lateral expandido
+                  Container(width: 350, child: _buildSidePanel()),
+                  SizedBox(width: 24),
+                  // Contenido principal
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _buildSearchAndAddSection(ScreenType.desktop),
+                        SizedBox(height: 24),
+                        Expanded(child: _buildListaInsumos(ScreenType.desktop)),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 24),
+                  // Panel de estadísticas (solo desktop)
+                  Container(width: 300, child: _buildStatsPanel()),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Header responsivo
+  Widget _buildHeader(ScreenType screenType) {
+    final isDesktop = screenType == ScreenType.desktop;
+    final isTablet = screenType == ScreenType.tablet;
+
+    return Container(
+      padding: EdgeInsets.all(isDesktop ? 24 : 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.amber, Colors.amber[600]!],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            IconButton(
+              icon: Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+                size: isDesktop ? 28 : 24,
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Gestión de Inventario',
+                    style: GoogleFonts.poppins(
+                      fontSize:
+                          isDesktop
+                              ? 32
+                              : isTablet
+                              ? 28
+                              : 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Administra tus insumos de apiario',
+                    style: GoogleFonts.poppins(
+                      fontSize: isDesktop ? 16 : 14,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 16 : 12,
+                vertical: isDesktop ? 8 : 6,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.inventory_2,
+                    color: Colors.amber[700],
+                    size: isDesktop ? 20 : 16,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    '${widget.insumos.length}',
+                    style: GoogleFonts.poppins(
+                      color: Colors.amber[700],
+                      fontWeight: FontWeight.bold,
+                      fontSize: isDesktop ? 16 : 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildListaInsumos() {
-    // Asegúrate de que filteredInsumos no sea nulo
-    final insumosFiltrados = filteredInsumos ?? [];
+  // Sección de búsqueda y agregar
+  Widget _buildSearchAndAddSection(ScreenType screenType) {
+    final isDesktop = screenType == ScreenType.desktop;
+    final isTablet = screenType == ScreenType.tablet;
+    final padding = (isDesktop || isTablet) ? 0.0 : 16.0;
 
-    if (insumosFiltrados.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              searchController.text.isNotEmpty
-                  ? Icons.search_off
-                  : Icons.inventory_2_outlined,
-              size: 64,
-              color: Colors.amber[300] ?? Colors.amber,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding / 2),
+      child: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.amber[200]!),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
-            SizedBox(height: 16),
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar insumo...',
+                hintStyle: GoogleFonts.poppins(color: Colors.grey[500]),
+                prefixIcon: Icon(Icons.search, color: Colors.amber),
+                suffixIcon:
+                    searchController.text.isNotEmpty
+                        ? IconButton(
+                          icon: Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
+                            setState(() {
+                              searchController.clear();
+                            });
+                          },
+                        )
+                        : null,
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: isDesktop ? 20 : 16,
+                  horizontal: 16,
+                ),
+              ),
+              style: GoogleFonts.poppins(fontSize: isDesktop ? 16 : 14),
+              onChanged: (value) {
+                setState(() {});
+              },
+            ),
+          ),
+          SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: Icon(Icons.add, size: isDesktop ? 24 : 20),
+              label: Text(
+                'Agregar Nuevo Insumo',
+                style: GoogleFonts.poppins(
+                  fontSize: isDesktop ? 18 : 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: isDesktop ? 20 : 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+              onPressed: () {
+                _limpiarFormulario();
+                _mostrarDialogoAgregar();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Panel lateral para tablet y desktop
+  Widget _buildSidePanel() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
-              searchController.text.isNotEmpty
-                  ? 'No se encontraron insumos'
-                  : 'No hay insumos registrados',
+              'Resumen de Inventario',
               style: GoogleFonts.poppins(
                 fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600] ?? Colors.grey,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
               ),
             ),
-            Text(
-              searchController.text.isNotEmpty
-                  ? 'Intenta con otro término de búsqueda'
-                  : 'Agrega tu primer insumo al inventario',
-              style: GoogleFonts.poppins(
-                color: Colors.grey[500] ?? Colors.grey,
-              ),
+            SizedBox(height: 20),
+            _buildSummaryCard(
+              'Total de Insumos',
+              '${widget.insumos.length}',
+              Icons.inventory_2,
+              Colors.blue,
+            ),
+            SizedBox(height: 12),
+            _buildSummaryCard(
+              'Stock Bajo',
+              '${_getStockBajo()}',
+              Icons.warning,
+              Colors.orange,
+            ),
+            SizedBox(height: 12),
+            _buildSummaryCard(
+              'Sin Stock',
+              '${_getSinStock()}',
+              Icons.error,
+              Colors.red,
+            ),
+            SizedBox(height: 12),
+            _buildSummaryCard(
+              'Stock Total',
+              '${_getStockTotal()}',
+              Icons.assessment,
+              Colors.green,
             ),
           ],
         ),
-      ).animate().fadeIn(duration: 600.ms);
+      ),
+    );
+  }
+
+  // Panel de estadísticas para desktop
+  Widget _buildStatsPanel() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Análisis de Inventario',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+            SizedBox(height: 20),
+            _buildStatItem('Insumo con mayor stock', _getInsumoMayorStock()),
+            SizedBox(height: 16),
+            _buildStatItem('Insumo con menor stock', _getInsumoMenorStock()),
+            SizedBox(height: 16),
+            _buildStatItem(
+              'Promedio de stock',
+              '${_getPromedioStock()} unidades',
+            ),
+            SizedBox(height: 24),
+            Text(
+              'Alertas',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+            SizedBox(height: 16),
+            ..._buildAlertas(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Lista de insumos responsiva
+  Widget _buildListaInsumos(ScreenType screenType) {
+    final insumosFiltrados = filteredInsumos ?? [];
+    final isDesktop = screenType == ScreenType.desktop;
+    final isTablet = screenType == ScreenType.tablet;
+
+    if (insumosFiltrados.isEmpty) {
+      return _buildEmptyState();
     }
 
+    // Para desktop, usar grid de 2 columnas
+    if (isDesktop) {
+      return GridView.builder(
+        padding: EdgeInsets.zero,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 2.0,
+          crossAxisSpacing: 20,
+          mainAxisSpacing: 20,
+        ),
+        itemCount: insumosFiltrados.length,
+        itemBuilder: (context, index) {
+          return _buildInsumoCard(insumosFiltrados[index], index, screenType);
+        },
+      );
+    }
+
+    // Para tablet y móvil, usar lista
     return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: (isDesktop || isTablet) ? 0 : 16,
+      ),
       itemCount: insumosFiltrados.length,
       itemBuilder: (context, index) {
-        final insumo = insumosFiltrados[index];
-        // Manejo seguro de valores nulos
-        final cantidad =
-            int.tryParse(insumo['cantidad']?.toString() ?? '0') ?? 0;
-        final unidad = insumo['unidad']?.toString() ?? '';
-        final nombre = insumo['nombre']?.toString() ?? 'Sin nombre';
-        final id = insumo['id']?.toString() ?? '';
+        return _buildInsumoCard(insumosFiltrados[index], index, screenType);
+      },
+    );
+  }
 
-        final bool cantidadBaja = cantidad <= 1;
+  // Card de insumo responsivo
+  Widget _buildInsumoCard(
+    Map<String, dynamic> insumo,
+    int index,
+    ScreenType screenType,
+  ) {
+    final isDesktop = screenType == ScreenType.desktop;
+    final isTablet = screenType == ScreenType.tablet;
+    final isMobile = screenType == ScreenType.mobile;
 
-        return Card(
-              margin: EdgeInsets.only(bottom: 12),
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color:
-                      cantidadBaja
-                          ? Colors.red[100] ?? Colors.red.shade100
-                          : Colors.amber[100] ?? Colors.amber.shade100,
-                ),
+    final cantidad = int.tryParse(insumo['cantidad']?.toString() ?? '0') ?? 0;
+    final unidad = insumo['unidad']?.toString() ?? '';
+    final nombre = insumo['nombre']?.toString() ?? 'Sin nombre';
+    final id = insumo['id'] ?? 0;
+
+    final bool cantidadBaja = cantidad <= 1;
+
+    // Ajustes específicos para cada tamaño de pantalla
+    final cardMargin =
+        isMobile
+            ? EdgeInsets.only(bottom: 12)
+            : isTablet
+            ? EdgeInsets.only(bottom: 10)
+            : EdgeInsets.zero;
+
+    final cardPadding =
+        isDesktop
+            ? EdgeInsets.all(24)
+            : isTablet
+            ? EdgeInsets.all(12)
+            : EdgeInsets.all(16);
+
+    final iconSize =
+        isDesktop
+            ? 26
+            : isTablet
+            ? 18
+            : 20;
+    final titleFontSize =
+        isDesktop
+            ? 18
+            : isTablet
+            ? 14
+            : 16;
+    final subtitleFontSize =
+        isDesktop
+            ? 14
+            : isTablet
+            ? 11
+            : 12;
+
+    return Card(
+          margin: cardMargin,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color:
+                  cantidadBaja
+                      ? Colors.red[100] ?? Colors.red.shade100
+                      : Colors.amber[100] ?? Colors.amber.shade100,
+            ),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors:
+                    cantidadBaja
+                        ? [
+                          Colors.red[50] ?? Colors.red.shade50,
+                          Colors.red[25] ?? Colors.red.shade100,
+                        ]
+                        : [
+                          Colors.amber[50] ?? Colors.amber.shade50,
+                          Colors.white,
+                        ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(
-                    colors:
-                        cantidadBaja
-                            ? [
-                              Colors.red[50] ?? Colors.red.shade50,
-                              Colors.red[25] ?? Colors.red.shade100,
-                            ]
-                            : [
-                              Colors.amber[50] ?? Colors.amber.shade50,
-                              Colors.white,
-                            ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            child: Padding(
+              padding: cardPadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color:
-                                  cantidadBaja
-                                      ? Colors.red[100] ?? Colors.red.shade100
-                                      : Colors.amber[100] ??
-                                          Colors.amber.shade100,
-                              borderRadius: BorderRadius.circular(8),
+                      Container(
+                        padding: EdgeInsets.all(
+                          isDesktop
+                              ? 12
+                              : isTablet
+                              ? 6
+                              : 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              cantidadBaja
+                                  ? Colors.red[100] ?? Colors.red.shade100
+                                  : Colors.amber[100] ?? Colors.amber.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.inventory_2,
+                          color:
+                              cantidadBaja
+                                  ? Colors.red[700] ?? Colors.red
+                                  : Colors.amber[700] ?? Colors.amber,
+                          size: iconSize.toDouble(),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              nombre,
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                                fontSize: titleFontSize.toDouble(),
+                                color:
+                                    cantidadBaja
+                                        ? Colors.red[800] ?? Colors.red
+                                        : Colors.grey[800] ?? Colors.grey,
+                              ),
                             ),
-                            child: Icon(
-                              Icons.inventory_2,
-                              color:
-                                  cantidadBaja
-                                      ? Colors.red[700] ?? Colors.red
-                                      : Colors.amber[700] ?? Colors.amber,
-                              size: 20,
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            SizedBox(height: 4),
+                            Row(
                               children: [
                                 Text(
-                                  nombre,
+                                  'Stock: ',
                                   style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                    color:
-                                        cantidadBaja
-                                            ? Colors.red[800] ?? Colors.red
-                                            : Colors.grey[800] ?? Colors.grey,
+                                    fontSize: subtitleFontSize.toDouble(),
+                                    color: Colors.grey[600] ?? Colors.grey,
                                   ),
                                 ),
-                                SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Stock: ',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color: Colors.grey[600] ?? Colors.grey,
-                                      ),
-                                    ),
-                                    Text(
-                                      '$cantidad $unidad',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color:
-                                            cantidadBaja
-                                                ? Colors.red[700] ?? Colors.red
-                                                : Colors.amber[700] ??
-                                                    Colors.amber,
-                                      ),
-                                    ),
-                                  ],
+                                Text(
+                                  '$cantidad $unidad',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: subtitleFontSize.toDouble(),
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        cantidadBaja
+                                            ? Colors.red[700] ?? Colors.red
+                                            : Colors.amber[700] ?? Colors.amber,
+                                  ),
                                 ),
                               ],
                             ),
+                          ],
+                        ),
+                      ),
+                      if (cantidadBaja)
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
                           ),
-                          if (cantidadBaja)
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                'STOCK BAJO',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'STOCK BAJO',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  SizedBox(
+                    height:
+                        isDesktop
+                            ? 16
+                            : isTablet
+                            ? 10
+                            : 12,
+                  ),
+                  // Botones responsivos
+                  isDesktop
+                      ? Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          OutlinedButton.icon(
+                            icon: Icon(Icons.edit, size: 16),
+                            label: Text(
+                              'Editar',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
                               ),
                             ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor:
+                                  Colors.amber[700] ?? Colors.amber,
+                              side: BorderSide(
+                                color: Colors.amber[300] ?? Colors.amber,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                            ),
+                            onPressed: () => _editarInsumo(insumo),
+                          ),
+                          SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            icon: Icon(Icons.delete, size: 16),
+                            label: Text(
+                              'Eliminar',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red[700] ?? Colors.red,
+                              side: BorderSide(
+                                color: Colors.red[300] ?? Colors.red,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                            ),
+                            onPressed: () => _eliminarInsumo(id),
+                          ),
                         ],
-                      ),
-                      SizedBox(height: 12),
-                      Row(
+                      )
+                      : Row(
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
-                              icon: Icon(Icons.edit, size: 16),
+                              icon: Icon(Icons.edit, size: isTablet ? 14 : 16),
                               label: Text(
                                 'Editar',
                                 style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.w500,
+                                  fontSize: isTablet ? 12 : 14,
                                 ),
                               ),
                               style: OutlinedButton.styleFrom(
@@ -795,11 +1179,15 @@ class _GestionInventarioState extends State<GestionInventario>
                           SizedBox(width: 8),
                           Expanded(
                             child: OutlinedButton.icon(
-                              icon: Icon(Icons.delete, size: 16),
+                              icon: Icon(
+                                Icons.delete,
+                                size: isTablet ? 14 : 16,
+                              ),
                               label: Text(
                                 'Eliminar',
                                 style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.w500,
+                                  fontSize: isTablet ? 12 : 14,
                                 ),
                               ),
                               style: OutlinedButton.styleFrom(
@@ -811,28 +1199,230 @@ class _GestionInventarioState extends State<GestionInventario>
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              onPressed: () => _eliminarInsumo,
+                              onPressed: () => _eliminarInsumo(id),
                             ),
                           ),
                         ],
                       ),
-                    ],
+                ],
+              ),
+            ),
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 600.ms, delay: Duration(milliseconds: index * 100))
+        .slideX(
+          begin: 0.2,
+          end: 0,
+          duration: 600.ms,
+          curve: Curves.easeOutQuad,
+        );
+  }
+
+  // Widgets auxiliares
+  Widget _buildSummaryCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 24),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: color,
                   ),
                 ),
-              ),
-            )
-            .animate()
-            .fadeIn(
-              duration: 600.ms,
-              delay: Duration(milliseconds: index * 100),
-            )
-            .slideX(
-              begin: 0.2,
-              end: 0,
-              duration: 600.ms,
-              curve: Curves.easeOutQuad,
-            );
-      },
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _buildStatItem(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+        ),
+        SizedBox(height: 4),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            searchController.text.isNotEmpty
+                ? Icons.search_off
+                : Icons.inventory_2_outlined,
+            size: 64,
+            color: Colors.amber[300] ?? Colors.amber,
+          ),
+          SizedBox(height: 16),
+          Text(
+            searchController.text.isNotEmpty
+                ? 'No se encontraron insumos'
+                : 'No hay insumos registrados',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600] ?? Colors.grey,
+            ),
+          ),
+          Text(
+            searchController.text.isNotEmpty
+                ? 'Intenta con otro término de búsqueda'
+                : 'Agrega tu primer insumo al inventario',
+            style: GoogleFonts.poppins(color: Colors.grey[500] ?? Colors.grey),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 600.ms);
+  }
+
+  List<Widget> _buildAlertas() {
+    List<Widget> alertas = [];
+
+    if (_getSinStock() > 0) {
+      alertas.add(_buildAlerta('Productos sin stock', Icons.error, Colors.red));
+    }
+
+    if (_getStockBajo() > 0) {
+      alertas.add(
+        _buildAlerta('Stock bajo detectado', Icons.warning, Colors.orange),
+      );
+    }
+
+    if (alertas.isEmpty) {
+      alertas.add(
+        _buildAlerta(
+          'Inventario en buen estado',
+          Icons.check_circle,
+          Colors.green,
+        ),
+      );
+    }
+
+    return alertas;
+  }
+
+  Widget _buildAlerta(String mensaje, IconData icon, Color color) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              mensaje,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Métodos auxiliares para estadísticas
+  int _getStockBajo() {
+    return widget.insumos.where((insumo) {
+      final cantidad = int.tryParse(insumo['cantidad']?.toString() ?? '0') ?? 0;
+      return cantidad > 0 && cantidad <= 1;
+    }).length;
+  }
+
+  int _getSinStock() {
+    return widget.insumos.where((insumo) {
+      final cantidad = int.tryParse(insumo['cantidad']?.toString() ?? '0') ?? 0;
+      return cantidad <= 0;
+    }).length;
+  }
+
+  int _getStockTotal() {
+    return widget.insumos.fold(0, (total, insumo) {
+      final cantidad = int.tryParse(insumo['cantidad']?.toString() ?? '0') ?? 0;
+      return total + cantidad;
+    });
+  }
+
+  String _getInsumoMayorStock() {
+    if (widget.insumos.isEmpty) return 'Sin datos';
+
+    var insumoMayor = widget.insumos.reduce((a, b) {
+      final cantidadA = int.tryParse(a['cantidad']?.toString() ?? '0') ?? 0;
+      final cantidadB = int.tryParse(b['cantidad']?.toString() ?? '0') ?? 0;
+      return cantidadA > cantidadB ? a : b;
+    });
+
+    return insumoMayor['nombre'] ?? 'Sin nombre';
+  }
+
+  String _getInsumoMenorStock() {
+    if (widget.insumos.isEmpty) return 'Sin datos';
+
+    var insumoMenor = widget.insumos.reduce((a, b) {
+      final cantidadA = int.tryParse(a['cantidad']?.toString() ?? '0') ?? 0;
+      final cantidadB = int.tryParse(b['cantidad']?.toString() ?? '0') ?? 0;
+      return cantidadA < cantidadB ? a : b;
+    });
+
+    return insumoMenor['nombre'] ?? 'Sin nombre';
+  }
+
+  double _getPromedioStock() {
+    if (widget.insumos.isEmpty) return 0.0;
+
+    final total = _getStockTotal();
+    return total / widget.insumos.length;
   }
 }

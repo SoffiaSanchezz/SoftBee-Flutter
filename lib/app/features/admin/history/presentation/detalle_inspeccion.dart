@@ -53,6 +53,141 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth > 1200;
+        final isTablet =
+            constraints.maxWidth > 768 && constraints.maxWidth <= 1200;
+        final isMobile = constraints.maxWidth <= 768;
+
+        if (isDesktop) {
+          return _buildDesktopLayout();
+        } else if (isTablet) {
+          return _buildTabletLayout();
+        } else {
+          return _buildMobileLayout();
+        }
+      },
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return Scaffold(
+      body: Row(
+        children: [
+          // Sidebar con información principal
+          Container(
+            width: 400,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  _getStatusColor(widget.estado),
+                  _getStatusColor(widget.estado).withOpacity(0.7),
+                ],
+              ),
+            ),
+            child: _buildSidebarContent(),
+          ),
+          // Contenido principal
+          Expanded(
+            child: Container(
+              color: Colors.grey[50],
+              child: Column(
+                children: [
+                  _buildDesktopTabBar(),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildDesktopInfoTab(),
+                        _buildDesktopProduccionTab(),
+                        _buildDesktopColmenasTab(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabletLayout() {
+    return Scaffold(
+      body: NestedScrollView(
+        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+          return <Widget>[
+            SliverAppBar(
+              expandedHeight: 250.0,
+              floating: false,
+              pinned: true,
+              backgroundColor: _getStatusColor(widget.estado),
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(
+                  'Detalles de Inspección',
+                  style: GoogleFonts.concertOne(
+                    fontSize: 24,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 10.0,
+                        color: Colors.black.withOpacity(0.3),
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+                background: _buildTabletHeader(),
+              ),
+            ),
+            SliverPersistentHeader(
+              delegate: _SliverAppBarDelegate(
+                TabBar(
+                  controller: _tabController,
+                  labelColor: _getStatusColor(widget.estado),
+                  unselectedLabelColor: Colors.grey,
+                  indicatorColor: _getStatusColor(widget.estado),
+                  labelStyle: GoogleFonts.poppins(fontSize: 16),
+                  tabs: [
+                    Tab(
+                      icon: Icon(Icons.info_outline, size: 28),
+                      text: "Información",
+                    ),
+                    Tab(
+                      icon: Icon(Icons.show_chart, size: 28),
+                      text: "Producción",
+                    ),
+                    Tab(icon: Icon(Icons.hive, size: 28), text: "Colmenas"),
+                  ],
+                ),
+              ),
+              pinned: true,
+            ),
+          ];
+        },
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildTabletInfoTab(),
+            _buildTabletProduccionTab(),
+            _buildTabletColmenasTab(),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {},
+        label: Text('Editar', style: GoogleFonts.poppins(fontSize: 16)),
+        icon: Icon(Icons.edit, size: 24),
+        backgroundColor: _getStatusColor(widget.estado),
+      ).animate().scale(delay: 300.ms),
+    );
+  }
+
+  Widget _buildMobileLayout() {
     return Scaffold(
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
@@ -77,71 +212,7 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
                     ],
                   ),
                 ),
-                background: Hero(
-                  tag: 'inspeccion_${widget.fecha}',
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              _getStatusColor(widget.estado),
-                              _getStatusColor(widget.estado).withOpacity(0.7),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: -50,
-                        bottom: -50,
-                        child: Opacity(
-                          opacity: 0.2,
-                          child: Icon(
-                            _getStatusIcon(widget.estado),
-                            size: 200,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 20,
-                        bottom: 70,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _getStatusIcon(widget.estado),
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                widget.estado,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                background: _buildMobileHeader(),
               ),
             ),
             SliverPersistentHeader(
@@ -172,9 +243,7 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Acción para editar la inspección
-        },
+        onPressed: () {},
         label: Text('Editar', style: GoogleFonts.poppins()),
         icon: Icon(Icons.edit),
         backgroundColor: _getStatusColor(widget.estado),
@@ -182,6 +251,653 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     );
   }
 
+  Widget _buildSidebarContent() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Spacer(),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _getStatusIcon(widget.estado),
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        widget.estado,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 40),
+            Text(
+              'Inspección',
+              style: GoogleFonts.concertOne(
+                fontSize: 32,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              'Detalles Completos',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                color: Colors.white.withOpacity(0.9),
+              ),
+            ),
+            SizedBox(height: 40),
+            _buildSidebarInfoCard('Fecha', widget.fecha, Icons.calendar_today),
+            SizedBox(height: 20),
+            _buildSidebarInfoCard(
+              'Estado',
+              widget.estado,
+              _getStatusIcon(widget.estado),
+            ),
+            SizedBox(height: 40),
+            Text(
+              'Observaciones',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                widget.observaciones,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.9),
+                  height: 1.5,
+                ),
+              ),
+            ),
+            Spacer(),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {},
+                icon: Icon(Icons.edit, color: _getStatusColor(widget.estado)),
+                label: Text(
+                  'Editar Inspección',
+                  style: GoogleFonts.poppins(
+                    color: _getStatusColor(widget.estado),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSidebarInfoCard(String title, String value, IconData icon) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white, size: 24),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopTabBar() {
+    return Container(
+      color: Colors.white,
+      child: TabBar(
+        controller: _tabController,
+        labelColor: _getStatusColor(widget.estado),
+        unselectedLabelColor: Colors.grey,
+        indicatorColor: _getStatusColor(widget.estado),
+        labelStyle: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+        tabs: [
+          Tab(icon: Icon(Icons.info_outline, size: 28), text: "Información"),
+          Tab(icon: Icon(Icons.show_chart, size: 28), text: "Producción"),
+          Tab(icon: Icon(Icons.hive, size: 28), text: "Colmenas"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopInfoTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Información General',
+            style: GoogleFonts.concertOne(
+              fontSize: 28,
+              color: Colors.brown[800],
+            ),
+          ),
+          SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(child: _buildClimateCard()),
+              SizedBox(width: 24),
+              Expanded(child: _buildAdditionalInfoCard()),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopProduccionTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Análisis de Producción',
+            style: GoogleFonts.concertOne(
+              fontSize: 28,
+              color: Colors.brown[800],
+            ),
+          ),
+          SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: AnimatedOpacity(
+                  opacity: _showingLineChart ? 1.0 : 0.0,
+                  duration: Duration(milliseconds: 500),
+                  child: _buildDesktopLineChart(),
+                ),
+              ),
+              SizedBox(width: 24),
+              Expanded(child: _buildProduccionStats()),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopColmenasTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Estado de las Colmenas',
+            style: GoogleFonts.concertOne(
+              fontSize: 28,
+              color: Colors.brown[800],
+            ),
+          ),
+          SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: AnimatedOpacity(
+                  opacity: _showingBarChart ? 1.0 : 0.0,
+                  duration: Duration(milliseconds: 500),
+                  child: _buildDesktopBarChart(),
+                ),
+              ),
+              SizedBox(width: 24),
+              Expanded(child: _buildColmenasList()),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabletHeader() {
+    return Hero(
+      tag: 'inspeccion_${widget.fecha}',
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  _getStatusColor(widget.estado),
+                  _getStatusColor(widget.estado).withOpacity(0.7),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            right: -80,
+            bottom: -80,
+            child: Opacity(
+              opacity: 0.2,
+              child: Icon(
+                _getStatusIcon(widget.estado),
+                size: 300,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 24,
+            bottom: 80,
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _getStatusIcon(widget.estado),
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        widget.estado,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 16),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.calendar_today, size: 20, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        widget.fecha,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileHeader() {
+    return Hero(
+      tag: 'inspeccion_${widget.fecha}',
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  _getStatusColor(widget.estado),
+                  _getStatusColor(widget.estado).withOpacity(0.7),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            right: -50,
+            bottom: -50,
+            child: Opacity(
+              opacity: 0.2,
+              child: Icon(
+                _getStatusIcon(widget.estado),
+                size: 200,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 20,
+            bottom: 70,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getStatusIcon(widget.estado),
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    widget.estado,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabletInfoTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child:
+                    _buildInfoCard(
+                      'Fecha de Inspección',
+                      widget.fecha,
+                      Icons.calendar_today,
+                    ).animate().fadeIn(duration: 300.ms).slideY(),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child:
+                    _buildInfoCard(
+                          'Estado General',
+                          widget.estado,
+                          _getStatusIcon(widget.estado),
+                        )
+                        .animate()
+                        .fadeIn(duration: 400.ms, delay: 100.ms)
+                        .slideY(),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          _buildObservacionesCard()
+              .animate()
+              .fadeIn(duration: 500.ms, delay: 200.ms)
+              .slideY(),
+          SizedBox(height: 20),
+          _buildClimateCard()
+              .animate()
+              .fadeIn(duration: 600.ms, delay: 300.ms)
+              .slideY(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabletProduccionTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle('Producción de miel en los últimos meses'),
+          SizedBox(height: 20),
+          AnimatedOpacity(
+            opacity: _showingLineChart ? 1.0 : 0.0,
+            duration: Duration(milliseconds: 500),
+            child: _buildTabletLineChart(),
+          ),
+          SizedBox(height: 24),
+          _buildProduccionStats(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabletColmenasTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle('Estado de las colmenas'),
+          SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: AnimatedOpacity(
+                  opacity: _showingBarChart ? 1.0 : 0.0,
+                  duration: Duration(milliseconds: 500),
+                  child: _buildTabletBarChart(),
+                ),
+              ),
+              SizedBox(width: 24),
+              Expanded(child: _buildColmenasList()),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopLineChart() {
+    return Container(
+      height: 400,
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withOpacity(0.1),
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: _buildLineChartContent(),
+    );
+  }
+
+  Widget _buildTabletLineChart() {
+    return Container(
+      height: 300,
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withOpacity(0.2),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: _buildLineChartContent(),
+    );
+  }
+
+  Widget _buildDesktopBarChart() {
+    return Container(
+      height: 400,
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withOpacity(0.1),
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: _buildBarChartContent(),
+    );
+  }
+
+  Widget _buildTabletBarChart() {
+    return Container(
+      height: 300,
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withOpacity(0.2),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: _buildBarChartContent(),
+    );
+  }
+
+  Widget _buildAdditionalInfoCard() {
+    return Card(
+      elevation: 4,
+      shadowColor: Colors.amber.withOpacity(0.3),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Información Adicional',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.brown[800],
+              ),
+            ),
+            SizedBox(height: 16),
+            _buildInfoRow('Inspector', 'Juan Pérez'),
+            _buildInfoRow('Duración', '45 minutos'),
+            _buildInfoRow('Próxima inspección', '15/06/2025'),
+            _buildInfoRow('Colmenas revisadas', '4 de 4'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.brown[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Resto de métodos originales con ajustes menores...
   Widget _buildInfoTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
@@ -492,7 +1208,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     ).animate().fadeIn(duration: 600.ms, delay: 400.ms);
   }
 
-  // Modificación para hacer que las tarjetas de colmena sean interactivas
   Widget _buildColmenaItem(
     String name,
     double health,
@@ -575,7 +1290,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     );
   }
 
-  // Método para mostrar el diálogo con el informe detallado
   void _showColmenaDetailDialog(
     String name,
     double health,
@@ -603,7 +1317,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
                   child: ListView(
                     controller: controller,
                     children: [
-                      // Encabezado con nombre y estado
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -638,12 +1351,8 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
                         ],
                       ),
                       SizedBox(height: 20),
-
-                      // Indicador de salud
                       _buildHealthIndicator(health, status, statusColor),
                       SizedBox(height: 24),
-
-                      // Secciones de información detallada
                       _buildDetailSection(
                         'Población',
                         _buildPopulationDetails(),
@@ -664,48 +1373,43 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
                         _buildTreatmentsList(),
                       ),
                       SizedBox(height: 16),
-
-                      // Botones de acción
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              icon: Icon(Icons.edit),
-                              label: Text('Editar'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: statusColor,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                // Aquí iría la navegación a la pantalla de edición
-                              },
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              icon: Icon(Icons.history),
-                              label: Text('Historial'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.brown[800],
-                                side: BorderSide(color: Colors.brown[800]!),
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              onPressed: () {
-                                // Mostrar historial completo
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
+                      // Row(
+                      //   children: [
+                      //     Expanded(
+                      //       child: ElevatedButton.icon(
+                      //         icon: Icon(Icons.edit),
+                      //         label: Text('Editar'),
+                      //         style: ElevatedButton.styleFrom(
+                      //           backgroundColor: statusColor,
+                      //           foregroundColor: Colors.white,
+                      //           padding: EdgeInsets.symmetric(vertical: 12),
+                      //           shape: RoundedRectangleBorder(
+                      //             borderRadius: BorderRadius.circular(10),
+                      //           ),
+                      //         ),
+                      //         onPressed: () {
+                      //           Navigator.pop(context);
+                      //         },
+                      //       ),
+                      //     ),
+                      //     SizedBox(width: 12),
+                      //     Expanded(
+                      //       child: OutlinedButton.icon(
+                      //         icon: Icon(Icons.history),
+                      //         label: Text('Historial'),
+                      //         style: OutlinedButton.styleFrom(
+                      //           foregroundColor: Colors.brown[800],
+                      //           side: BorderSide(color: Colors.brown[800]!),
+                      //           padding: EdgeInsets.symmetric(vertical: 12),
+                      //           shape: RoundedRectangleBorder(
+                      //             borderRadius: BorderRadius.circular(10),
+                      //           ),
+                      //         ),
+                      //         onPressed: () {},
+                      //       ),
+                      //     ),
+                      //   ],
+                      // ),
                     ],
                   ),
                 ),
@@ -713,7 +1417,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     );
   }
 
-  // Widget para mostrar el indicador de salud
   Widget _buildHealthIndicator(
     double health,
     String status,
@@ -799,7 +1502,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     );
   }
 
-  // Widget para métricas de salud
   Widget _buildHealthMetric(
     String label,
     String value,
@@ -826,7 +1528,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     );
   }
 
-  // Widget para secciones de detalles
   Widget _buildDetailSection(String title, Widget content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -845,7 +1546,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     );
   }
 
-  // Detalles de población
   Widget _buildPopulationDetails() {
     return Container(
       padding: EdgeInsets.all(16),
@@ -881,7 +1581,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     );
   }
 
-  // Item de población
   Widget _buildPopulationItem(String label, String value, IconData icon) {
     return Column(
       children: [
@@ -903,7 +1602,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     );
   }
 
-  // Detalles de producción
   Widget _buildProductionDetails() {
     return Container(
       padding: EdgeInsets.all(16),
@@ -970,7 +1668,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     );
   }
 
-  // Item de producción
   Widget _buildProductionItem(String label, String value, IconData icon) {
     return Column(
       children: [
@@ -992,7 +1689,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     );
   }
 
-  // Lista de actividades recientes
   Widget _buildRecentActivityList() {
     final activities = [
       {
@@ -1088,7 +1784,6 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
     );
   }
 
-  // Lista de tratamientos
   Widget _buildTreatmentsList() {
     final treatments = [
       {
@@ -1197,93 +1892,93 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
           ),
         ],
       ),
-      child: LineChart(
-        LineChartData(
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: 5,
-            getDrawingHorizontalLine: (value) {
-              return FlLine(
-                color: Colors.grey.withOpacity(0.2),
-                strokeWidth: 1,
-              );
-            },
-          ),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) {
-                  return Text(
-                    '${value.toInt()} kg',
-                    style: GoogleFonts.poppins(
-                      color: Colors.grey[600],
-                      fontSize: 10,
-                    ),
-                  );
-                },
-              ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) {
-                  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      months[value.toInt()],
-                      style: GoogleFonts.poppins(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          ),
-          borderData: FlBorderData(show: false),
-          lineBarsData: [
-            LineChartBarData(
-              spots: [
-                FlSpot(0, 12),
-                FlSpot(1, 15),
-                FlSpot(2, 8),
-                FlSpot(3, 18),
-                FlSpot(4, 20),
-                FlSpot(5, 25),
-              ],
-              isCurved: true,
-              color: Colors.amber[600],
-              barWidth: 4,
-              dotData: FlDotData(show: true),
-              belowBarData: BarAreaData(
-                show: true,
-                color: Colors.amber.withOpacity(0.2),
-              ),
-            ),
-          ],
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              // tooltipBgColor: Colors.brown[800]!.withOpacity(0.8),
-              getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
-                return touchedBarSpots.map((barSpot) {
-                  return LineTooltipItem(
-                    '${barSpot.y.toInt()} kg',
-                    GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  );
-                }).toList();
+      child: _buildLineChartContent(),
+    );
+  }
+
+  Widget _buildLineChartContent() {
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 5,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(color: Colors.grey.withOpacity(0.2), strokeWidth: 1);
+          },
+        ),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  '${value.toInt()} kg',
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[600],
+                    fontSize: 10,
+                  ),
+                );
               },
             ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              getTitlesWidget: (value, meta) {
+                const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    months[value.toInt()],
+                    style: GoogleFonts.poppins(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: [
+              FlSpot(0, 12),
+              FlSpot(1, 15),
+              FlSpot(2, 8),
+              FlSpot(3, 18),
+              FlSpot(4, 20),
+              FlSpot(5, 25),
+            ],
+            isCurved: true,
+            color: Colors.amber[600],
+            barWidth: 4,
+            dotData: FlDotData(show: true),
+            belowBarData: BarAreaData(
+              show: true,
+              color: Colors.amber.withOpacity(0.2),
+            ),
+          ),
+        ],
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+              return touchedBarSpots.map((barSpot) {
+                return LineTooltipItem(
+                  '${barSpot.y.toInt()} kg',
+                  GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              }).toList();
+            },
           ),
         ),
       ),
@@ -1305,85 +2000,85 @@ class _InspeccionDetalleScreenState extends State<InspeccionDetalleScreen>
           ),
         ],
       ),
-      child: BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          maxY: 100,
-          barTouchData: BarTouchData(
-            touchTooltipData: BarTouchTooltipData(
-              // tooltipBgColor: Colors.brown[800]!.withOpacity(0.8),
-              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                return BarTooltipItem(
-                  '${rod.toY.toInt()}%',
-                  GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+      child: _buildBarChartContent(),
+    );
+  }
+
+  Widget _buildBarChartContent() {
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: 100,
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                '${rod.toY.toInt()}%',
+                GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  '${value.toInt()}%',
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[600],
+                    fontSize: 10,
                   ),
                 );
               },
             ),
           ),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) {
-                  return Text(
-                    '${value.toInt()}%',
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                const colmenas = [
+                  'Colmena 1',
+                  'Colmena 2',
+                  'Colmena 3',
+                  'Colmena 4',
+                ];
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    colmenas[value.toInt()],
                     style: GoogleFonts.poppins(
                       color: Colors.grey[600],
                       fontSize: 10,
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (value, meta) {
-                  const colmenas = [
-                    'Colmena 1',
-                    'Colmena 2',
-                    'Colmena 3',
-                    'Colmena 4',
-                  ];
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      colmenas[value.toInt()],
-                      style: GoogleFonts.poppins(
-                        color: Colors.grey[600],
-                        fontSize: 10,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
-          borderData: FlBorderData(show: false),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: 20,
-            getDrawingHorizontalLine: (value) {
-              return FlLine(
-                color: Colors.grey.withOpacity(0.2),
-                strokeWidth: 1,
-              );
-            },
-          ),
-          barGroups: [
-            _buildBarData(0, 80, Colors.green),
-            _buildBarData(1, 70, Colors.green),
-            _buildBarData(2, 50, Colors.orange),
-            _buildBarData(3, 90, Colors.green),
-          ],
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
+        borderData: FlBorderData(show: false),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 20,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(color: Colors.grey.withOpacity(0.2), strokeWidth: 1);
+          },
+        ),
+        barGroups: [
+          _buildBarData(0, 80, Colors.green),
+          _buildBarData(1, 70, Colors.green),
+          _buildBarData(2, 50, Colors.orange),
+          _buildBarData(3, 90, Colors.green),
+        ],
       ),
     );
   }
