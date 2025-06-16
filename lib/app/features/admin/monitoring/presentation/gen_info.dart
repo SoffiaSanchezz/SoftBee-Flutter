@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:soft_bee/app/features/admin/monitoring/page/registro_cosecha_page.dart';
+import 'package:soft_bee/app/features/admin/monitoring/page/tratamiento_page.dart';
+import 'package:soft_bee/app/features/admin/monitoring/presentation/queen_bee.dart';
 
 class GenInfo extends StatelessWidget {
   final String colmenaNombre;
@@ -715,7 +718,8 @@ class GenInfo extends StatelessWidget {
         icon: Icons.change_circle_outlined,
         label: 'Remplazo de Reina',
         onPressed: () {
-          // Navigator.push(context, MaterialPageRoute(builder: (context) => QueenReplacementScreen(colmenaNombre: colmenaNombre)));
+          Navigator.push(context, MaterialPageRoute
+          (builder: (context) => QueenReplacementScreen(colmenaNombre: colmenaNombre)));
         },
         color: Colors.amber[700]!,
         width: buttonWidth,
@@ -724,7 +728,15 @@ class GenInfo extends StatelessWidget {
       _buildActionButton(
         icon: Icons.eco_outlined,
         label: 'Registrar Cosecha',
-        onPressed: () {},
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) =>RegistrarCosechaScreen(colmenaNombre: colmenaNombre),
+            ),
+          );
+        },
         color: Colors.blue[700]!,
         width: buttonWidth,
         isDesktop: isDesktop,
@@ -732,7 +744,15 @@ class GenInfo extends StatelessWidget {
       _buildActionButton(
         icon: Icons.medical_services_outlined,
         label: 'Tratamiento',
-        onPressed: () {},
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => TratamientoScreen(colmenaNombre: colmenaNombre),
+            ),
+          );
+        },
         color: Colors.red[700]!,
         width: buttonWidth,
         isDesktop: isDesktop,

@@ -1,10 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:io'; 
 import 'dart:async';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:soft_bee/app/features/admin/user/services/auth_storage.dart';
+import 'package:soft_bee/app/features/auth/data/service/user_service.dart';
 import 'package:soft_bee/app/features/auth/presentation/pages/password_page.dart';
 import 'package:soft_bee/app/features/auth/presentation/pages/register_page.dart';
 
@@ -33,7 +32,7 @@ class _LoginPageState extends State<LoginPage> {
   static const Color darkYellow = Color(0xFFF9A825);
   static const Color textDark = Color(0xFF333333);
 
-  Future<void> _login() async {
+Future<void> _login() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -43,73 +42,35 @@ class _LoginPageState extends State<LoginPage> {
       _errorMessage = null;
     });
 
-    // const String url = 'http://192.168.1.10:8000/usuarios/login';
-    const String url = 'http://192.168.6.161:8000/usuarios/login';
-
-    final Map<String, dynamic> loginData = {
-      "correo": _emailController.text.trim(),
-      "contraseña": _passwordController.text.trim(),
-    };
-
     try {
-      print('Enviando solicitud a: $url');
-      print('Datos: $loginData');
+      final response = await AuthService.login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
 
-      final response = await http
-          .post(
-            Uri.parse(url),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(loginData),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      print('Respuesta recibida. Status: ${response.statusCode}');
-      print('Cuerpo de la respuesta: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        final accessToken = responseData['access_token'];
-
-        await storage.write(key: 'access_token', value: accessToken);
-
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
+      if (response['success'] == true) {
+        // Verificar que el token se guardó correctamente
+        final token = await AuthStorage.getToken();
+        if (token != null && token.isNotEmpty) {
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+        } else {
+          setState(() {
+            _errorMessage = 'Error al guardar la sesión';
+          });
         }
-      } else if (response.statusCode == 401) {
-        // El servidor respondió con credenciales incorrectas
-        setState(() {
-          _errorMessage = 'Correo o contraseña incorrectos.';
-        });
-      } else if (response.statusCode == 404) {
-        // Usuario no encontrado
-        setState(() {
-          _errorMessage = 'El usuario no está registrado.';
-        });
       } else {
-        // Otro error inesperado
-        final errorData = jsonDecode(response.body);
         setState(() {
-          _errorMessage =
-              errorData['detail'] ??
-              'Error del servidor (${response.statusCode})';
+          _errorMessage = response['message'] ?? 'Error en el inicio de sesión';
+          if (response['statusCode'] == 401) {
+            _errorMessage = 'Credenciales incorrectas';
+          }
         });
       }
-    } on SocketException {
-      setState(() {
-        _errorMessage =
-            'No se pudo conectar al servidor. Verifica tu conexión a internet.';
-      });
-    } on TimeoutException {
-      setState(() {
-        _errorMessage = 'Tiempo de espera agotado. El servidor no respondió.';
-      });
-    } on http.ClientException catch (e) {
-      setState(() {
-        _errorMessage = 'Error de conexión: ${e.message}';
-      });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error inesperado: ${e.toString()}';
+        _errorMessage = 'Error de conexión: $e';
       });
     } finally {
       if (mounted) {
@@ -119,7 +80,6 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
   }
-
 
   @override
   void dispose() {

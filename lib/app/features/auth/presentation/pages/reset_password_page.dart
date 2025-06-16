@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:soft_bee/app/features/auth/data/service/user_service.dart';
 
-class ForgotPasswordPage extends StatefulWidget {
-  const ForgotPasswordPage({Key? key}) : super(key: key);
+class ResetPasswordPage extends StatefulWidget {
+  final String token;
+
+  const ResetPasswordPage({Key? key, required this.token}) : super(key: key);
 
   @override
-  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
+  _ResetPasswordPageState createState() => _ResetPasswordPageState();
 }
 
-class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   bool _isLoading = false;
-  bool _emailSent = false;
+  bool _passwordChanged = false;
 
   // Colores personalizados
   final Color lightYellow = const Color(0xFFFFF9C4);
@@ -24,254 +28,37 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _resetPassword() async {
+  Future<void> _submitNewPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    final response = await AuthService.requestPasswordReset(
-      _emailController.text.trim(),
-    );
+    try {
+      final response = await AuthService.resetPassword(
+        widget.token,
+        _passwordController.text.trim(),
+      );
 
-    if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message']),
+          backgroundColor: response['success'] ? Colors.green : Colors.red,
+        ),
+      );
 
-    setState(() => _isLoading = false);
-
-    // Mostrar modal mejorado - más pequeño y centrado
-    _showResultModal(
-      success: response['success'],
-      message: response['message'],
-      email: _emailController.text.trim(),
-    );
+      if (response['success']) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
-  void _showResultModal({
-    required bool success,
-    required String message,
-    required String email,
-  }) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          child: _buildModalContent(success, message, email),
-        );
-      },
-    );
-  }
-
-  Widget _buildModalContent(bool success, String message, String email) {
-    return Container(
-      // Hacer el modal más pequeño
-      constraints: const BoxConstraints(maxWidth: 320, maxHeight: 400),
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Icono más pequeño
-          TweenAnimationBuilder(
-            tween: Tween<double>(begin: 0, end: 1),
-            duration: const Duration(milliseconds: 500),
-            builder: (context, value, child) {
-              return Transform.scale(
-                scale: value,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color:
-                        success
-                            ? Colors.green.withOpacity(0.1)
-                            : Colors.red.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: success ? Colors.green : Colors.red,
-                      width: 2,
-                    ),
-                  ),
-                  child: Icon(
-                    success ? Icons.mark_email_read : Icons.error_outline,
-                    size: 32,
-                    color: success ? Colors.green : Colors.red,
-                  ),
-                ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          // Título más compacto
-          Text(
-            success ? '¡Correo Enviado!' : 'Error',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: textDark,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 12),
-
-          // Contenido simplificado
-          if (success) ...[
-            Text(
-              'Enlace enviado a:',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: textDark.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: lightYellow,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: primaryYellow.withOpacity(0.3)),
-              ),
-              child: Text(
-                email,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: darkYellow,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Instrucciones más concisas
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withOpacity(0.3)),
-              ),
-              child: Text(
-                'Revisa tu bandeja de entrada y spam.\nEl enlace expira en 24 horas.',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.blue.withOpacity(0.8),
-                  height: 1.3,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ] else ...[
-            Text(
-              message,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: textDark.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-
-          const SizedBox(height: 20),
-
-          // Botones más compactos
-          if (success) ...[
-            // Solo un botón principal para éxito
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Cerrar modal
-                  Navigator.of(context).pop(); // Regresar a login
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  elevation: 0,
-                ),
-                child: Text(
-                  'Entendido',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Botón secundario más pequeño
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Cerrar modal
-                _resetPassword(); // Reenviar
-              },
-              child: Text(
-                'Reenviar correo',
-                style: GoogleFonts.poppins(
-                  color: darkYellow,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ] else ...[
-            // Para errores, solo botón de reintentar
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Cerrar modal
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryYellow,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  elevation: 0,
-                ),
-                child: Text(
-                  'Reintentar',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // El resto de los métodos permanecen igual...
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -310,7 +97,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  // Resto de métodos helper mantienen la misma estructura...
+  // Layout para escritorio
   Widget _buildDesktopLayout(
     BuildContext context,
     double width,
@@ -367,7 +154,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       ],
                     ),
                     child: Icon(
-                      Icons.emoji_nature,
+                      Icons.lock_reset,
                       size: logoSize * 0.5,
                       color: Colors.white,
                     ),
@@ -375,7 +162,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
                 SizedBox(height: verticalSpacing),
                 Text(
-                  'SoftBee',
+                  'Nueva Contraseña',
                   style: GoogleFonts.poppins(
                     fontSize: titleSize,
                     fontWeight: FontWeight.bold,
@@ -395,7 +182,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     border: Border.all(color: primaryYellow, width: 2),
                   ),
                   child: Text(
-                    'Gestión de Apiarios',
+                    'Crea una contraseña segura',
                     style: GoogleFonts.poppins(
                       fontSize: subtitleSize,
                       color: darkYellow,
@@ -418,7 +205,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               child: Center(
                 child: Container(
                   constraints: BoxConstraints(maxWidth: 500),
-                  child: _buildForgotPasswordForm(
+                  child: _buildResetPasswordForm(
                     titleSize * 0.9,
                     subtitleSize,
                     buttonHeight,
@@ -502,7 +289,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ],
                         ),
                         child: Icon(
-                          Icons.emoji_nature,
+                          Icons.lock_reset,
                           size: logoSize * 0.5,
                           color: Colors.white,
                         ),
@@ -510,7 +297,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     ),
                     SizedBox(height: verticalSpacing),
                     Text(
-                      'SoftBee',
+                      'Nueva Contraseña',
                       style: GoogleFonts.poppins(
                         fontSize: titleSize,
                         fontWeight: FontWeight.bold,
@@ -519,29 +306,16 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    Text(
-                      'Gestión de Apiarios',
-                      style: GoogleFonts.poppins(
-                        fontSize: subtitleSize,
-                        color: textDark.withOpacity(0.7),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
                   ],
                 ),
               ),
             ),
             // Formulario
-            _buildForgotPasswordForm(
+            _buildResetPasswordForm(
               titleSize * 0.7,
               subtitleSize,
               buttonHeight,
               verticalSpacing,
-            ),
-            // Footer
-            Padding(
-              padding: EdgeInsets.only(top: verticalSpacing),
-              child: _buildFooter(width, subtitleSize),
             ),
           ],
         ),
@@ -613,14 +387,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ],
                         ),
                         child: Icon(
-                          Icons.emoji_nature,
+                          Icons.lock_reset,
                           size: logoSize * 0.5,
                           color: Colors.white,
                         ),
                       ),
                       SizedBox(height: verticalSpacing * 0.5),
                       Text(
-                        'SoftBee',
+                        'Nueva Contraseña',
                         style: GoogleFonts.poppins(
                           fontSize: titleSize,
                           fontWeight: FontWeight.bold,
@@ -634,7 +408,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 SizedBox(width: width * 0.05),
                 // Columna derecha: Formulario
                 Expanded(
-                  child: _buildForgotPasswordForm(
+                  child: _buildResetPasswordForm(
                     titleSize * 0.8,
                     subtitleSize,
                     buttonHeight,
@@ -649,8 +423,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  // Resto de métodos helper (mantienen la misma estructura)
-  Widget _buildForgotPasswordForm(
+  Widget _buildResetPasswordForm(
     double titleSize,
     double subtitleSize,
     double buttonHeight,
@@ -684,15 +457,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     shape: BoxShape.circle,
                     border: Border.all(color: primaryYellow, width: 2),
                   ),
-                  child: Icon(
-                    Icons.email_outlined,
-                    size: 32,
-                    color: darkYellow,
-                  ),
+                  child: Icon(Icons.lock_reset, size: 32, color: darkYellow),
                 ),
                 SizedBox(height: verticalSpacing),
                 Text(
-                  'Recuperar Contraseña',
+                  'Nueva Contraseña',
                   style: GoogleFonts.poppins(
                     fontSize: titleSize,
                     fontWeight: FontWeight.bold,
@@ -702,7 +471,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
                 SizedBox(height: verticalSpacing * 0.5),
                 Text(
-                  'Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña',
+                  'Crea una nueva contraseña segura para tu cuenta',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: subtitleSize,
@@ -713,21 +482,30 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ],
             ),
             SizedBox(height: verticalSpacing * 1.5),
-            // Campo de email
-            _buildTextField(
-              controller: _emailController,
-              label: 'Correo electrónico',
-              hint: 'ejemplo@correo.com',
-              icon: Icons.email_outlined,
-              keyboardType: TextInputType.emailAddress,
+            // Campo de nueva contraseña
+            _buildPasswordField(
+              controller: _passwordController,
+              label: 'Nueva contraseña',
+              hint: 'Mínimo 8 caracteres',
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Por favor ingresa tu correo';
+                  return 'Por favor ingresa tu nueva contraseña';
                 }
-                if (!RegExp(
-                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                ).hasMatch(value)) {
-                  return 'Ingresa un correo válido';
+                if (value.length < 8) {
+                  return 'La contraseña debe tener al menos 8 caracteres';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: verticalSpacing),
+            // Campo de confirmación de contraseña
+            _buildPasswordField(
+              controller: _confirmPasswordController,
+              label: 'Confirmar contraseña',
+              hint: 'Repite tu nueva contraseña',
+              validator: (value) {
+                if (value != _passwordController.text) {
+                  return 'Las contraseñas no coinciden';
                 }
                 return null;
               },
@@ -736,16 +514,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             // Botón de envío
             SizedBox(
               height: buttonHeight,
-              child: _buildSendButton(subtitleSize),
-            ),
-            SizedBox(height: verticalSpacing),
-            // Separador
-            _buildDivider(),
-            SizedBox(height: verticalSpacing),
-            // Botón de regreso al login
-            SizedBox(
-              height: buttonHeight * 0.8,
-              child: _buildBackToLoginButton(subtitleSize),
+              child: _buildSubmitButton(subtitleSize),
             ),
           ],
         ),
@@ -753,12 +522,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  Widget _buildTextField({
+  Widget _buildPasswordField({
     required TextEditingController controller,
     required String label,
     required String hint,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
     return Container(
@@ -774,13 +541,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       ),
       child: TextFormField(
         controller: controller,
-        keyboardType: keyboardType,
+        obscureText: true,
         style: const TextStyle(color: Colors.black),
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
           labelStyle: TextStyle(color: darkYellow),
-          prefixIcon: Icon(icon, color: primaryYellow),
+          prefixIcon: Icon(Icons.lock_outline, color: primaryYellow),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -808,7 +575,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  Widget _buildSendButton(double fontSize) {
+  Widget _buildSubmitButton(double fontSize) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -826,7 +593,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ),
       ),
       child: ElevatedButton(
-        onPressed: (_isLoading || _emailSent) ? null : _resetPassword,
+        onPressed: (_isLoading || _passwordChanged) ? null : _submitNewPassword,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
@@ -850,12 +617,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      _emailSent ? Icons.check_circle : Icons.send,
+                      _passwordChanged ? Icons.check_circle : Icons.lock_open,
                       size: 20,
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      _emailSent ? 'Enlace Enviado' : 'Enviar Enlace',
+                      _passwordChanged
+                          ? 'Contraseña Cambiada'
+                          : 'Cambiar Contraseña',
                       style: GoogleFonts.poppins(
                         fontSize: fontSize,
                         fontWeight: FontWeight.bold,
@@ -865,102 +634,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ],
                 ),
       ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        Expanded(
-          child: Divider(color: primaryYellow.withOpacity(0.5), thickness: 1.5),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: lightYellow,
-              shape: BoxShape.circle,
-              border: Border.all(color: primaryYellow, width: 1.5),
-            ),
-            child: Text(
-              'O',
-              style: GoogleFonts.poppins(
-                color: darkYellow,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-        Expanded(
-          child: Divider(color: primaryYellow.withOpacity(0.5), thickness: 1.5),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBackToLoginButton(double fontSize) {
-    return OutlinedButton(
-      onPressed: () => Navigator.pop(context),
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Color(0xFFFFC107), width: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.arrow_back, color: Color(0xFFFF8F00), size: 20),
-          const SizedBox(width: 8),
-          Text(
-            'Volver al inicio de sesión',
-            style: GoogleFonts.poppins(
-              color: darkYellow,
-              fontWeight: FontWeight.normal,
-              fontSize: fontSize,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFooter(double width, double fontSize) {
-    return Column(
-      children: [
-        Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: lightYellow.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: primaryYellow.withOpacity(0.3)),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.info_outline, color: darkYellow, size: 20),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Si no recibes el correo, revisa tu carpeta de spam o contacta con soporte.',
-                  style: GoogleFonts.poppins(
-                    color: darkYellow,
-                    fontSize: fontSize * 0.8,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: 16),
-        Text(
-          '© ${DateTime.now().year} SoftBee. Todos los derechos reservados.',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            color: textDark.withOpacity(0.6),
-            fontSize: fontSize * 0.7,
-          ),
-        ),
-      ],
     );
   }
 }

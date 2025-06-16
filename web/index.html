@@ -31,8 +31,17 @@
 
   <title>soft_bee</title>
   <link rel="manifest" href="manifest.json">
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBMdEvHg8uNqCskVdpbx1iAdhYK548hfdc"></script>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <script src="flutter_bootstrap.js" async>
+    // Manejar la redirección después del correo
+      if (window.location.hash) {
+        const hash = window.location.hash.substring(1);
+        if (hash.startsWith('/reset-password')) {
+          window.location.href = '/#' + hash;
+        }
+      }
+  </script>
 </body>
 </html>

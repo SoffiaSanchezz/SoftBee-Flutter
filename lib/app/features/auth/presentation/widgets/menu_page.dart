@@ -6,6 +6,10 @@ import 'package:soft_bee/app/features/admin/inventory/page/salida_inventario_pag
 import 'package:soft_bee/app/features/admin/monitoring/page/colmena_page.dart';
 import 'package:soft_bee/app/features/admin/reports/page/repo_detalle_page.dart';
 import 'package:soft_bee/app/features/admin/user/page/user_config_page.dart';
+import 'package:soft_bee/app/features/admin/user/services/auth_storage.dart';
+import 'package:soft_bee/app/features/auth/data/service/user_service.dart';
+import 'package:soft_bee/app/features/admin/user/controllers/user_config_controller.dart';
+import 'package:provider/provider.dart';
 
 
 class MenuScreen extends StatefulWidget {
@@ -99,7 +103,7 @@ class _EnhancedMenuScreenState extends State<MenuScreen>
               SafeArea(
                 child: Column(
                   children: [
-                    _buildEnhancedHeader(),
+                    _buildEnhancedHeader(context),
                     Expanded(child: _buildInteractiveMenu()),
                     if (MediaQuery.of(context).size.width > 900)
                       _buildDesktopStats(),
@@ -159,7 +163,11 @@ class _EnhancedMenuScreenState extends State<MenuScreen>
     );
   }
 
-  Widget _buildEnhancedHeader() {
+  Widget _buildEnhancedHeader(BuildContext context) {
+    final userController = Provider.of<UserConfigController>(context);
+    final String nombreUsuario = userController.userName ?? 'Usuario';
+    final bool tieneImagen = true; // Puedes cambiarlo dinámicamente
+
     return Container(
       padding: EdgeInsets.symmetric(vertical: 24, horizontal: 20),
       child: Column(
@@ -229,32 +237,103 @@ class _EnhancedMenuScreenState extends State<MenuScreen>
                   ),
                 ],
               ),
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => UserProfilePage()),
-                    );
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [
-                          Color(0xFFFBC209).withOpacity(0.2),
-                          Colors.transparent,
-                        ],
+              Column(
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      print('Clic en avatar - Verificando autenticación...');
+                      final token = await AuthStorage.getToken();
+
+                      if (token == null || token.isEmpty) {
+                        print('No se encontró token - Redirigiendo a login');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Por favor inicie sesión primero'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        Navigator.pushNamed(context, '/login');
+                      } else {
+                        print('Token encontrado - Verificando con backend...');
+                        final verificationResult =
+                            await AuthService.verifyToken(token);
+                        final isValid =
+                            verificationResult != null &&
+                            verificationResult['id'] != null;
+
+                        if (isValid) {
+                          print('Token válido - Navegando a perfil');
+                          Navigator.pushNamed(context, '/profile');
+                        } else {
+                          print('Token inválido - Limpiando y redirigiendo');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Sesión expirada, por favor inicie sesión nuevamente',
+                              ),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                          await AuthStorage.deleteToken();
+                          Navigator.pushNamed(context, '/login');
+                        }
+                      }
+                    },
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 1.0, end: 1.05),
+                      duration: Duration(seconds: 2),
+                      curve: Curves.easeInOut,
+                      builder: (context, scale, child) {
+                        return Transform.scale(scale: scale, child: child);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFFFBC209).withOpacity(0.2),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: 30,
+                          backgroundImage:
+                              tieneImagen
+                                  ? AssetImage('assets/images/userSoftbee.png')
+                                  : null,
+                          child:
+                              !tieneImagen
+                                  ? Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 30,
+                                  )
+                                  : null,
+                          backgroundColor: Color(0xFFFBC209),
+                        ),
                       ),
                     ),
-                    child: CircleAvatar(
-                      radius: 30,
-                      backgroundImage: AssetImage('/image/userSoftbee.png'),
+                  ),
+                  SizedBox(height: 6),
+                  Text(
+                    nombreUsuario,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF333333),
                     ),
                   ),
-                ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+                  // IconButton(
+                  //   icon: Icon(Icons.logout, size: 20, color: Colors.red),
+                  //   tooltip: 'Cerrar sesión',
+                  //   onPressed: () async {
+                  //     await AuthStorage.deleteToken();
+                  //     Navigator.pushNamed(context, '/login');
+                  //   },
+                  // ),
+                ],
               ),
             ],
           ),

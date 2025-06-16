@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,6 +15,7 @@ class _RegisterPageState extends State<RegisterPage> {
   // Controladores originales adaptados
   final nombreCtrl = TextEditingController();
   final correoCtrl = TextEditingController();
+  final telefonoCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   final confirmPassCtrl = TextEditingController();
 
@@ -24,6 +26,7 @@ class _RegisterPageState extends State<RegisterPage> {
   // Variables para validaciones en tiempo real
   String? _nombreError;
   String? _correoError;
+  String? _telefonoError;
   String? _passError;
   String? _confirmPassError;
   bool _showValidation = false;
@@ -38,45 +41,48 @@ class _RegisterPageState extends State<RegisterPage> {
   static const Color darkYellow = Color(0xFFF9A825);
   static const Color textDark = Color(0xFF333333);
 
-  // Tu función original de registro adaptada
+  // FUNCIÓN MEJORADA DE REGISTRO
   Future<void> registrarUsuario() async {
     final url = Uri.parse("http://192.168.1.10:8000/usuarios/register");
 
     try {
       setState(() => _isLoading = true);
-      final apiariesData =
-          _apiaries
-              .map(
-                (apiary) => {
-                  "direccion": apiary.addressController.text.trim(),
-                  "cantidad_colmenas":
-                      int.tryParse(apiary.hiveCountController.text) ?? 0,
-                },
-              )
-              .toList();
 
-      // Ajusta requestBody
-      final requestBody =
-          _apiaries.length == 1
-              ? {
-                "nombre": nombreCtrl.text.trim(),
-                "correo": correoCtrl.text.trim(),
-                "contraseña": passCtrl.text,
-                "apiarios": [
-                  {
-                    "direccion": _apiaries[0].addressController.text.trim(),
-                    "cantidad_colmenas":
-                        int.tryParse(_apiaries[0].hiveCountController.text) ??
-                        0,
-                  },
-                ],
-              }
-              : {
-                "nombre": nombreCtrl.text.trim(),
-                "correo": correoCtrl.text.trim(),
-                "contraseña": passCtrl.text,
-                "apiarios": apiariesData,
-              };
+      // Validar todos los campos antes de enviar
+      if (!_formKey.currentState!.validate()) {
+        setState(() => _showValidation = true);
+        return;
+      }
+
+      // Preparamos los datos de los apiarios
+      final apiariesData =
+          _apiaries.map((apiary) {
+            // Procesamos la dirección para estandarizarla
+            String direccion = _procesarDireccion(
+              apiary.addressController.text.trim(),
+            );
+
+            return {
+              "nombre": apiary.nameController.text.trim(),
+              "direccion": direccion,
+              "cantidad_colmenas":
+                  int.tryParse(apiary.hiveCountController.text) ?? 0,
+              "latitud": "0", // Valor temporal
+              "longitud": "0", // Valor temporal
+              "aplica_tratamientos": apiary.appliesTreatments,
+            };
+          }).toList();
+
+      // Preparamos el cuerpo de la solicitud
+      final requestBody = {
+        "nombre": nombreCtrl.text.trim(),
+        "telefono": _limpiarTelefono(telefonoCtrl.text.trim()),
+        "correo": correoCtrl.text.trim(),
+        "contraseña": passCtrl.text,
+        "apiarios": apiariesData,
+      };
+
+      debugPrint("Enviando: ${jsonEncode(requestBody)}");
 
       final response = await http.post(
         url,
@@ -84,25 +90,85 @@ class _RegisterPageState extends State<RegisterPage> {
         body: jsonEncode(requestBody),
       );
 
-      final decodedResponse = jsonDecode(response.body);
+      debugPrint("Respuesta: ${response.statusCode} - ${response.body}");
 
-      if (response.statusCode == 200) {
-        // Mostrar alerta de éxito
-        _showSuccessDialog(
-          decodedResponse['msg'] ?? 'Usuario registrado exitosamente',
-        );
+      if (response.statusCode == 201) {
+        final decodedResponse = jsonDecode(response.body);
+        _showSuccessDialog(decodedResponse['msg'] ?? 'Registro exitoso');
       } else {
-        // Mostrar alerta de error
-        _showErrorDialog(
-          decodedResponse['detail'] ?? 'Error al registrar usuario',
-        );
+        final error = jsonDecode(response.body);
+        _showErrorDialog(error['detail'] ?? 'Error en el registro');
       }
     } catch (e) {
-      // Mostrar alerta de error de conexión
-      _showErrorDialog('Error de conexión: $e');
+      debugPrint("Error en registro: $e");
+      _showErrorDialog('Error de conexión: ${e.toString()}');
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  // FUNCIONES AUXILIARES NUEVAS
+
+  // Procesa la dirección para estandarizarla
+  String _procesarDireccion(String direccion) {
+    // Convertir a minúsculas y eliminar espacios extras
+    direccion = direccion.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
+
+    // Capitalizar palabras importantes
+    List<String> palabras = direccion.split(' ');
+    for (int i = 0; i < palabras.length; i++) {
+      if (palabras[i].isNotEmpty) {
+        // Capitalizar municipios conocidos
+        if (_esMunicipio(palabras[i])) {
+          palabras[i] = _capitalizar(palabras[i]);
+        }
+        // Procesar abreviaturas comunes
+        else if (palabras[i] == 'cll') {
+          palabras[i] = 'Calle';
+        } else if (palabras[i] == 'cra' || palabras[i] == 'kr') {
+          palabras[i] = 'Carrera';
+        } else if (palabras[i] == 'av' || palabras[i] == 'avenida') {
+          palabras[i] = 'Avenida';
+        } else if (palabras[i] == 'diag' || palabras[i] == 'dg') {
+          palabras[i] = 'Diagonal';
+        } else if (palabras[i] == 'trans' || palabras[i] == 'tv') {
+          palabras[i] = 'Transversal';
+        }
+      }
+    }
+
+    return palabras.join(' ');
+  }
+
+  // Capitaliza la primera letra de una palabra
+  String _capitalizar(String palabra) {
+    if (palabra.isEmpty) return palabra;
+    return palabra[0].toUpperCase() + palabra.substring(1);
+  }
+
+  // Verifica si es un municipio conocido
+  bool _esMunicipio(String palabra) {
+    final municipios = [
+      'cota',
+      'facatativa',
+      'mosquera',
+      'funza',
+      'madrid',
+      'zipaquira',
+      'chia',
+      'cajica',
+      'tenjo',
+      'tabio',
+      'sopo',
+      'cucuta',
+      'medellin',
+    ];
+    return municipios.contains(palabra.toLowerCase());
+  }
+
+  // Limpia el número de teléfono (elimina espacios, guiones, etc.)
+  String _limpiarTelefono(String telefono) {
+    return telefono.replaceAll(RegExp(r'[^\d]'), '');
   }
 
   // Función para mostrar alerta de éxito
@@ -160,8 +226,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // Cerrar dialog
-                    Navigator.of(context).pop(); // Regresar a pantalla anterior
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pop();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
@@ -267,13 +333,15 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // Funciones de validación en tiempo real
+  // Funciones de validación en tiempo real (mejoradas)
   void _validateNombre(String value) {
     setState(() {
       if (value.isEmpty) {
         _nombreError = 'El nombre es requerido';
       } else if (value.length < 2) {
         _nombreError = 'El nombre debe tener al menos 2 caracteres';
+      } else if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(value)) {
+        _nombreError = 'El nombre solo puede contener letras';
       } else {
         _nombreError = null;
       }
@@ -284,10 +352,57 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       if (value.isEmpty) {
         _correoError = 'El correo es requerido';
-      } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-        _correoError = 'Ingresa un correo válido';
+      } else if (!RegExp(
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+      ).hasMatch(value)) {
+        _correoError = 'Ingresa un correo válido (ej: usuario@dominio.com)';
       } else {
         _correoError = null;
+      }
+    });
+  }
+
+  // Validación de teléfono para Colombia
+  void _validateTelefono(String value) {
+    setState(() {
+      if (value.isEmpty) {
+        _telefonoError = 'El teléfono es requerido';
+      } else {
+        String cleanPhone = value.replaceAll(RegExp(r'[\s\-$$$$\+]'), '');
+
+        if (cleanPhone.startsWith('57') && cleanPhone.length > 10) {
+          cleanPhone = cleanPhone.substring(2);
+        }
+
+        if (cleanPhone.length == 10) {
+          if (cleanPhone.startsWith('3')) {
+            if (RegExp(r'^3[0-9]{9}$').hasMatch(cleanPhone)) {
+              _telefonoError = null;
+            } else {
+              _telefonoError = 'Número móvil inválido';
+            }
+          } else if (RegExp(r'^[1-8][0-9]{9}$').hasMatch(cleanPhone)) {
+            _telefonoError = null;
+          } else {
+            _telefonoError = 'Número de teléfono inválido';
+          }
+        } else if (cleanPhone.length == 7) {
+          if (RegExp(r'^[2-9][0-9]{6}$').hasMatch(cleanPhone)) {
+            _telefonoError = null;
+          } else {
+            _telefonoError = 'Número fijo inválido';
+          }
+        } else if (cleanPhone.length == 12 && cleanPhone.startsWith('57')) {
+          String nationalNumber = cleanPhone.substring(2);
+          if (nationalNumber.startsWith('3') &&
+              RegExp(r'^3[0-9]{9}$').hasMatch(nationalNumber)) {
+            _telefonoError = null;
+          } else {
+            _telefonoError = 'Formato: +57 3XX XXX XXXX';
+          }
+        } else {
+          _telefonoError = 'Formato válido: 3XX XXX XXXX o XXX XXXX (fijo)';
+        }
       }
     });
   }
@@ -296,15 +411,16 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       if (value.isEmpty) {
         _passError = 'La contraseña es requerida';
-      } else if (value.length < 6) {
-        _passError = 'La contraseña debe tener al menos 6 caracteres';
-      } else if (!RegExp(r'^(?=.*[a-zA-Z])(?=.*\d)').hasMatch(value)) {
-        _passError = 'Debe contener al menos una letra y un número';
+      } else if (value.length < 8) {
+        _passError = 'La contraseña debe tener al menos 8 caracteres';
+      } else if (!RegExp(
+        r'^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]',
+      ).hasMatch(value)) {
+        _passError = 'Debe contener al menos: 1 letra, 1 número y 1 símbolo';
       } else {
         _passError = null;
       }
 
-      // Revalidar confirmación de contraseña si ya tiene texto
       if (confirmPassCtrl.text.isNotEmpty) {
         _validateConfirmPassword(confirmPassCtrl.text);
       }
@@ -323,6 +439,34 @@ class _RegisterPageState extends State<RegisterPage> {
     });
   }
 
+  // Formateador de teléfono para Colombia
+  TextInputFormatter get _phoneFormatter {
+    return TextInputFormatter.withFunction((oldValue, newValue) {
+      String text = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+
+      if (text.length <= 3) {
+        return TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+      } else if (text.length <= 6) {
+        text = '${text.substring(0, 3)} ${text.substring(3)}';
+      } else if (text.length <= 10) {
+        text =
+            '${text.substring(0, 3)} ${text.substring(3, 6)} ${text.substring(6)}';
+      } else {
+        text = text.substring(0, 10);
+        text =
+            '${text.substring(0, 3)} ${text.substring(3, 6)} ${text.substring(6)}';
+      }
+
+      return TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+    });
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -333,6 +477,7 @@ class _RegisterPageState extends State<RegisterPage> {
     String? Function(String?)? validator,
     String? errorText,
     Function(String)? onChanged,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,6 +497,7 @@ class _RegisterPageState extends State<RegisterPage> {
             controller: controller,
             obscureText: isPassword && !_isPasswordVisible,
             keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
             style: const TextStyle(color: textDark),
             onChanged: (value) {
               if (_showValidation && onChanged != null) {
@@ -424,7 +570,6 @@ class _RegisterPageState extends State<RegisterPage> {
             validator: validator,
           ),
         ),
-        // Mensaje de error debajo del campo
         if (errorText != null && _showValidation)
           Padding(
             padding: const EdgeInsets.only(top: 8, left: 16),
@@ -445,7 +590,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ],
             ),
           ),
-        // Mensaje de éxito
         if (errorText == null && controller.text.isNotEmpty && _showValidation)
           Padding(
             padding: const EdgeInsets.only(top: 8, left: 16),
@@ -468,15 +612,63 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  // Widget para el switch de tratamientos
+  Widget _buildTreatmentSwitch({
+    required bool value,
+    required Function(bool) onChanged,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: primaryYellow.withOpacity(0.3), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: SwitchListTile(
+        title: Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: textDark,
+            fontSize: 14,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: GoogleFonts.poppins(
+            color: textDark.withOpacity(0.7),
+            fontSize: 12,
+          ),
+        ),
+        value: value,
+        onChanged: onChanged,
+        activeColor: primaryYellow,
+        activeTrackColor: primaryYellow.withOpacity(0.3),
+        inactiveThumbColor: Colors.grey,
+        inactiveTrackColor: Colors.grey.withOpacity(0.3),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     nombreCtrl.dispose();
     correoCtrl.dispose();
+    telefonoCtrl.dispose();
     passCtrl.dispose();
     confirmPassCtrl.dispose();
     for (final apiary in _apiaries) {
-      apiary.addressController.dispose();
-      apiary.hiveCountController.dispose();
+      apiary.dispose();
     }
     super.dispose();
   }
@@ -531,7 +723,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
     return Row(
       children: [
-        // Panel izquierdo - Logo y branding
         Container(
           width: width * 0.4,
           height: height,
@@ -573,11 +764,10 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ],
                     ),
-                    child: Image.asset(
-                      '/image/Logo.png', // Reemplaza con la ruta de tu imagen
-                      width: logoSize * 0.6,
-                      height: logoSize * 0.6,
-                      fit: BoxFit.contain,
+                    child: Icon(
+                      Icons.hive,
+                      size: logoSize * 0.4,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -615,7 +805,6 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           ),
         ),
-        // Panel derecho - Formulario
         Expanded(
           child: SingleChildScrollView(
             child: Padding(
@@ -662,7 +851,7 @@ class _RegisterPageState extends State<RegisterPage> {
     bool isSmallScreen,
   ) {
     final logoSize = width * (isSmallScreen ? 0.25 : 0.10);
-    final titleSize = width * (isSmallScreen ? 0.05  : 0.02);
+    final titleSize = width * (isSmallScreen ? 0.05 : 0.02);
     final subtitleSize = width * (isSmallScreen ? 0.04 : 0.03);
     final verticalSpacing = height * 0.02;
 
@@ -672,7 +861,6 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Logo y encabezado
             SizedBox(
               height: height * 0.25,
               child: Center(
@@ -699,11 +887,10 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ],
                         ),
-                        child: Image.asset(
-                          '/image/Logo.png', // Reemplaza con la ruta de tu imagen
-                          width: logoSize * 0.6,
-                          height: logoSize * 0.6,
-                          fit: BoxFit.contain,
+                        child: Icon(
+                          Icons.hive,
+                          size: logoSize * 0.4,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -721,12 +908,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
             ),
-            // Formulario de registro
             Form(
               key: _formKey,
               child: _buildRegistrationStepper(width, height, subtitleSize),
             ),
-            // Footer
             Padding(
               padding: EdgeInsets.only(top: verticalSpacing),
               child: _buildFooter(width, subtitleSize),
@@ -754,7 +939,6 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Columna izquierda: Logo
             SizedBox(
               width: width * 0.3,
               child: Column(
@@ -794,7 +978,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
             SizedBox(width: width * 0.05),
-            // Columna derecha: Formulario
             Expanded(
               child: Form(
                 key: _formKey,
@@ -825,28 +1008,26 @@ class _RegisterPageState extends State<RegisterPage> {
           final isLastStep = _currentStep == 1;
 
           if (isLastStep) {
-            if (_formKey.currentState!.validate()) {
-              registrarUsuario();
-            }
+            registrarUsuario(); // Usar la función mejorada
           } else {
-            // Activar validaciones en tiempo real
             setState(() {
               _showValidation = true;
             });
 
-            // Validar todos los campos del paso actual
             _validateNombre(nombreCtrl.text);
             _validateCorreo(correoCtrl.text);
+            _validateTelefono(telefonoCtrl.text);
             _validatePassword(passCtrl.text);
             _validateConfirmPassword(confirmPassCtrl.text);
 
-            // Verificar si hay errores
             if (_nombreError == null &&
                 _correoError == null &&
+                _telefonoError == null &&
                 _passError == null &&
                 _confirmPassError == null &&
                 nombreCtrl.text.isNotEmpty &&
                 correoCtrl.text.isNotEmpty &&
+                telefonoCtrl.text.isNotEmpty &&
                 passCtrl.text.isNotEmpty &&
                 confirmPassCtrl.text.isNotEmpty) {
               setState(() {
@@ -876,7 +1057,6 @@ class _RegisterPageState extends State<RegisterPage> {
             padding: const EdgeInsets.only(top: 20),
             child: Row(
               children: [
-                // Botón Continuar/Registrar
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -939,7 +1119,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Botón Cancelar/Atrás
                 Expanded(
                   child: OutlinedButton(
                     onPressed: details.onStepCancel,
@@ -965,7 +1144,6 @@ class _RegisterPageState extends State<RegisterPage> {
           );
         },
         steps: [
-          // Paso 1: Información personal
           Step(
             title: Text(
               'Información Personal',
@@ -1004,7 +1182,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       return 'Por favor ingresa tu correo';
                     }
                     if (!RegExp(
-                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
                     ).hasMatch(value)) {
                       return 'Ingresa un correo válido';
                     }
@@ -1013,9 +1191,29 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
+                  controller: telefonoCtrl,
+                  label: 'Teléfono',
+                  hint: '3XX XXX XXXX',
+                  icon: Icons.phone_outlined,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    _phoneFormatter,
+                  ],
+                  errorText: _telefonoError,
+                  onChanged: _validateTelefono,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor ingresa tu teléfono';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
                   controller: passCtrl,
                   label: 'Contraseña',
-                  hint: 'Crea una contraseña',
+                  hint: 'Crea una contraseña segura',
                   icon: Icons.lock_outline,
                   isPassword: true,
                   errorText: _passError,
@@ -1024,8 +1222,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     if (value == null || value.isEmpty) {
                       return 'Por favor ingresa una contraseña';
                     }
-                    if (value.length < 6) {
-                      return 'La contraseña debe tener al menos 6 caracteres';
+                    if (value.length < 8) {
+                      return 'La contraseña debe tener al menos 8 caracteres';
                     }
                     return null;
                   },
@@ -1054,7 +1252,6 @@ class _RegisterPageState extends State<RegisterPage> {
             isActive: _currentStep >= 0,
             state: _currentStep > 0 ? StepState.complete : StepState.indexed,
           ),
-          // Paso 2: Información de apiarios
           Step(
             title: Text(
               'Información de Apiarios',
@@ -1073,7 +1270,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Lista de apiarios
                 ..._apiaries.asMap().entries.map((entry) {
                   final index = entry.key;
                   final apiary = entry.value;
@@ -1085,7 +1281,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     showRemoveButton: _apiaries.length > 1,
                   );
                 }).toList(),
-                // Botón para agregar apiario
                 Padding(
                   padding: const EdgeInsets.only(top: 16),
                   child: OutlinedButton.icon(
@@ -1143,7 +1338,6 @@ class _RegisterPageState extends State<RegisterPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Encabezado de la tarjeta
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -1177,19 +1371,48 @@ class _RegisterPageState extends State<RegisterPage> {
               ],
             ),
           ),
-          // Contenido de la tarjeta
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
+                // NUEVO CAMPO: Nombre del apiario
+                _buildTextField(
+                  controller: apiary.nameController,
+                  label: 'Nombre del apiario',
+                  hint: 'Ej: Apiario Las Flores',
+                  icon: Icons.label_outline,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor ingresa el nombre del apiario';
+                    }
+                    if (value.length < 3) {
+                      return 'El nombre debe tener al menos 3 caracteres';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                // CAMPO MEJORADO: Dirección con validación específica
                 _buildTextField(
                   controller: apiary.addressController,
-                  label: 'Ubicación del apiario',
-                  hint: 'Ej: Camino Rural Km 5, Sector Las Abejas',
+                  label: 'Dirección exacta del apiario',
+                  hint: 'Ej: Cota, Vereda El Rosal - Finca La Esperanza',
                   icon: Icons.location_on_outlined,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa la ubicación';
+                      return 'La dirección es requerida';
+                    }
+                    if (value.length < 10) {
+                      return 'La dirección es muy corta';
+                    }
+                    // Validar que contenga municipio y algún detalle
+                    if (!RegExp(
+                          r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+\s*,\s*[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+',
+                        ).hasMatch(value) &&
+                        !RegExp(
+                          r'(vereda|finca|sector|barrio|kilometro|km)\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+',
+                        ).hasMatch(value)) {
+                      return 'Ingresa municipio y detalle (Ej: Cota, Finca La Esperanza)';
                     }
                     return null;
                   },
@@ -1210,6 +1433,19 @@ class _RegisterPageState extends State<RegisterPage> {
                     }
                     return null;
                   },
+                ),
+                const SizedBox(height: 16),
+                _buildTreatmentSwitch(
+                  value: apiary.appliesTreatments,
+                  onChanged: (value) {
+                    setState(() {
+                      apiary.appliesTreatments = value;
+                    });
+                  },
+                  title:
+                      '¿Aplicas tratamientos cuando las abejas están enfermas?',
+                  subtitle:
+                      'Indica si utilizas medicamentos o tratamientos veterinarios',
                 ),
               ],
             ),
@@ -1250,11 +1486,20 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 }
 
-// Clase para almacenar datos de apiario
+// CLASE ACTUALIZADA: ApiaryData con el nuevo campo de nombre
 class ApiaryData {
+  final TextEditingController nameController = TextEditingController(); // NUEVO
   final TextEditingController addressController = TextEditingController();
   final TextEditingController hiveCountController = TextEditingController();
+  bool appliesTreatments = false;
 
+  String get name => nameController.text; // NUEVO
   String get address => addressController.text;
   int get hiveCount => int.tryParse(hiveCountController.text) ?? 0;
+
+  void dispose() {
+    nameController.dispose(); // NUEVO
+    addressController.dispose();
+    hiveCountController.dispose();
+  }
 }
