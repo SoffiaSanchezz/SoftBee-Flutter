@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:soft_bee/app/features/admin/monitoring/presentation/monitoreo_apiario_screen.dart';
+import 'package:soft_bee/app/features/admin/monitoring/service/voice_assistant_service.dart';
 import 'package:soft_bee/app/features/admin/user/controllers/user_config_controller.dart';
 import 'package:soft_bee/app/features/admin/user/page/user_config_page.dart';
 import 'package:soft_bee/app/features/admin/user/services/auth_storage.dart';
@@ -18,7 +20,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UserConfigController()),
+        ChangeNotifierProvider(create: (context) => UserConfigController()),
+        Provider(
+          create: (context) {
+            final voiceService = VoiceAssistantService();
+            // Inicializamos el servicio de voz al crearlo
+            voiceService.initialize();
+            return voiceService;
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'SoftBee',
@@ -26,6 +36,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.amber,
           visualDensity: VisualDensity.adaptivePlatformDensity,
+          fontFamily: 'Poppins', // Asegúrate de tener esta fuente
         ),
         home: FutureBuilder(
           future: AuthStorage.hasToken(),
@@ -80,6 +91,8 @@ class MyApp extends StatelessWidget {
                 ? ResetPasswordPage(token: token)
                 : LoginPage();
           },
+          // Nueva ruta para el monitoreo
+          "/monitoreo": (context) => MonitoreoApiarioScreen(),
         },
         onGenerateRoute: (settings) {
           if (settings.name?.startsWith('/reset-password') ?? false) {
@@ -95,6 +108,25 @@ class MyApp extends StatelessWidget {
           }
           return null;
         },
+      ),
+    );
+  }
+}
+
+// Widget para mostrar mientras se carga
+class LoadingScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 20),
+            Text('Cargando asistente de voz...'),
+          ],
+        ),
       ),
     );
   }

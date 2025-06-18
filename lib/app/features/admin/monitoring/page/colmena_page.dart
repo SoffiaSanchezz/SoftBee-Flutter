@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:soft_bee/app/features/admin/monitoring/models/preguntas_model.dart';
 import 'package:soft_bee/app/features/admin/monitoring/presentation/gen_info.dart';
 import 'package:soft_bee/app/features/admin/monitoring/presentation/gestion_apiario.dart';
+import 'package:soft_bee/app/features/admin/monitoring/presentation/monitoreo_apiario_screen.dart';
 import 'package:soft_bee/app/features/admin/monitoring/presentation/queen_bee.dart';
 
 
@@ -556,7 +558,7 @@ class _MonitoreoColmenasState extends State<MonitoreoColmenas> {
                                         context,
                                         animation,
                                         secondaryAnimation,
-                                      ) => MonitoreoApiarioScreen(),
+                                      ) => MonitoreoApiarioScreen(),//Aqui se llama el componente 
                                   transitionsBuilder: (
                                     context,
                                     animation,

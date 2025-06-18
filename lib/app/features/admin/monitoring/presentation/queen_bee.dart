@@ -85,25 +85,29 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
     super.dispose();
   }
 
-  // Responsive breakpoints optimizados
+  // Breakpoints mejorados y más específicos
   bool _isMobile(BuildContext context) =>
-      MediaQuery.of(context).size.width < 768;
+      MediaQuery.of(context).size.width < 600;
   bool _isTablet(BuildContext context) =>
-      MediaQuery.of(context).size.width >= 768 &&
-      MediaQuery.of(context).size.width < 1024;
+      MediaQuery.of(context).size.width >= 600 &&
+      MediaQuery.of(context).size.width < 1200;
   bool _isDesktop(BuildContext context) =>
-      MediaQuery.of(context).size.width >= 1024;
+      MediaQuery.of(context).size.width >= 1200;
   bool _isLargeDesktop(BuildContext context) =>
-      MediaQuery.of(context).size.width >= 1440;
-  bool _isExtraLargeDesktop(BuildContext context) =>
-      MediaQuery.of(context).size.width >= 1920;
+      MediaQuery.of(context).size.width >= 1600;
 
-  // Obtener el ancho máximo del contenido para desktop
+  // Obtener el ancho máximo del contenido
   double _getMaxContentWidth(BuildContext context) {
-    if (_isExtraLargeDesktop(context)) return 1600;
-    if (_isLargeDesktop(context)) return 1200;
-    if (_isDesktop(context)) return 1000;
+    if (_isLargeDesktop(context)) return 1400;
+    if (_isDesktop(context)) return 1200;
     return double.infinity;
+  }
+
+  // Obtener la proporción del calendario vs formulario
+  List<int> _getCalendarFormFlex(BuildContext context) {
+    if (_isLargeDesktop(context)) return [3, 2]; // Más espacio para calendario
+    if (_isDesktop(context)) return [5, 3]; // Proporción mejorada
+    return [1, 1]; // Igual en tablet/móvil
   }
 
   // Inicializar el plugin de notificaciones
@@ -223,12 +227,15 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
             children: [
               _buildHeader(),
               Expanded(
-                child:
-                    _isDesktop(context)
-                        ? Center(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: _getMaxContentWidth(context),
+                child: _isDesktop(context)
+                    ? Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: _getMaxContentWidth(context),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0,
                             ),
                             child: TabBarView(
                               controller: _tabController,
@@ -239,15 +246,16 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                               ],
                             ),
                           ),
-                        )
-                        : TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _buildCalendarTab(),
-                            _buildHistoryTab(),
-                            _buildNotificationsTab(),
-                          ],
                         ),
+                      )
+                    : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildCalendarTab(),
+                          _buildHistoryTab(),
+                          _buildNotificationsTab(),
+                        ],
+                      ),
               ),
             ],
           ),
@@ -256,7 +264,7 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
     );
   }
 
-  // Header optimizado para desktop
+  // Header mejorado con mejor espaciado
   Widget _buildHeader() {
     return Container(
       decoration: const BoxDecoration(
@@ -284,25 +292,22 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth:
-                      _isDesktop(context)
-                          ? _getMaxContentWidth(context)
-                          : double.infinity,
+                  maxWidth: _isDesktop(context)
+                      ? _getMaxContentWidth(context)
+                      : double.infinity,
                 ),
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal:
-                        _isMobile(context)
-                            ? 16
-                            : _isTablet(context)
+                    horizontal: _isMobile(context)
+                        ? 16
+                        : _isTablet(context)
                             ? 24
-                            : 40,
-                    vertical:
-                        _isMobile(context)
-                            ? 16
-                            : _isTablet(context)
-                            ? 20
                             : 32,
+                    vertical: _isMobile(context)
+                        ? 16
+                        : _isTablet(context)
+                            ? 20
+                            : 24,
                   ),
                   child: Column(
                     children: [
@@ -314,8 +319,8 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                                   _isMobile(context)
                                       ? 12
                                       : _isDesktop(context)
-                                      ? 18
-                                      : 16,
+                                          ? 16
+                                          : 14,
                                 ),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.2),
@@ -325,19 +330,17 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                                 ),
                                 child: Icon(
                                   Icons.change_circle,
-                                  size:
-                                      _isMobile(context)
-                                          ? 32
-                                          : _isDesktop(context)
-                                          ? 42
-                                          : 36,
+                                  size: _isMobile(context)
+                                      ? 28
+                                      : _isDesktop(context)
+                                          ? 36
+                                          : 32,
                                   color: Colors.white,
                                 ),
                               )
                               .animate(
-                                onPlay:
-                                    (controller) =>
-                                        controller.repeat(reverse: true),
+                                onPlay: (controller) =>
+                                    controller.repeat(reverse: true),
                               )
                               .rotate(
                                 begin: -0.05,
@@ -345,10 +348,9 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                                 duration: 2000.ms,
                               ),
                           SizedBox(
-                            width:
-                                _isMobile(context)
-                                    ? 12
-                                    : _isDesktop(context)
+                            width: _isMobile(context)
+                                ? 12
+                                : _isDesktop(context)
                                     ? 20
                                     : 16,
                           ),
@@ -359,12 +361,11 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                                 Text(
                                       widget.colmenaNombre,
                                       style: GoogleFonts.poppins(
-                                        fontSize:
-                                            _isMobile(context)
-                                                ? 24
-                                                : _isDesktop(context)
-                                                ? 36
-                                                : 28,
+                                        fontSize: _isMobile(context)
+                                            ? 20
+                                            : _isDesktop(context)
+                                                ? 28
+                                                : 24,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white,
                                       ),
@@ -375,12 +376,11 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                                 Text(
                                       'Reemplazo de Abeja Reina',
                                       style: GoogleFonts.poppins(
-                                        fontSize:
-                                            _isMobile(context)
-                                                ? 14
-                                                : _isDesktop(context)
-                                                ? 18
-                                                : 16,
+                                        fontSize: _isMobile(context)
+                                            ? 12
+                                            : _isDesktop(context)
+                                                ? 16
+                                                : 14,
                                         color: Colors.white.withOpacity(0.8),
                                       ),
                                     )
@@ -397,31 +397,28 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                                       Icons.notifications_outlined,
                                       color: Colors.white,
                                     ),
-                                    onPressed:
-                                        () => _tabController.animateTo(2),
-                                    iconSize:
-                                        _isMobile(context)
-                                            ? 24
-                                            : _isDesktop(context)
-                                            ? 28
-                                            : 26,
+                                    onPressed: () => _tabController.animateTo(2),
+                                    iconSize: _isMobile(context)
+                                        ? 22
+                                        : _isDesktop(context)
+                                            ? 26
+                                            : 24,
                                   )
                                   .animate()
                                   .fadeIn(delay: 200.ms)
                                   .scale(begin: const Offset(0.5, 0.5)),
-                              SizedBox(width: _isDesktop(context) ? 8 : 0),
+                              if (_isDesktop(context)) const SizedBox(width: 8),
                               IconButton(
                                     icon: const Icon(
                                       Icons.share_outlined,
                                       color: Colors.white,
                                     ),
                                     onPressed: () {},
-                                    iconSize:
-                                        _isMobile(context)
-                                            ? 24
-                                            : _isDesktop(context)
-                                            ? 28
-                                            : 26,
+                                    iconSize: _isMobile(context)
+                                        ? 22
+                                        : _isDesktop(context)
+                                            ? 26
+                                            : 24,
                                   )
                                   .animate()
                                   .fadeIn(delay: 400.ms)
@@ -430,16 +427,13 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                           ),
                         ],
                       ),
-
                       SizedBox(
-                        height:
-                            _isMobile(context)
-                                ? 20
-                                : _isDesktop(context)
-                                ? 28
-                                : 24,
+                        height: _isMobile(context)
+                            ? 16
+                            : _isDesktop(context)
+                                ? 24
+                                : 20,
                       ),
-
                       // Stats grid optimizado
                       _buildStatsGrid(),
                     ],
@@ -448,7 +442,6 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
               ),
             ),
           ),
-
           // Tab bar centrado para desktop
           Container(
             decoration: const BoxDecoration(
@@ -457,31 +450,28 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth:
-                      _isDesktop(context)
-                          ? _getMaxContentWidth(context)
-                          : double.infinity,
+                  maxWidth: _isDesktop(context)
+                      ? _getMaxContentWidth(context)
+                      : double.infinity,
                 ),
                 child: TabBar(
                   controller: _tabController,
                   indicatorColor: Colors.white,
                   indicatorWeight: _isDesktop(context) ? 4 : 3,
                   labelStyle: GoogleFonts.poppins(
-                    fontSize:
-                        _isMobile(context)
-                            ? 12
-                            : _isDesktop(context)
-                            ? 16
-                            : 14,
+                    fontSize: _isMobile(context)
+                        ? 12
+                        : _isDesktop(context)
+                            ? 15
+                            : 13,
                     fontWeight: FontWeight.w600,
                   ),
                   unselectedLabelStyle: GoogleFonts.poppins(
-                    fontSize:
-                        _isMobile(context)
-                            ? 12
-                            : _isDesktop(context)
-                            ? 16
-                            : 14,
+                    fontSize: _isMobile(context)
+                        ? 12
+                        : _isDesktop(context)
+                            ? 15
+                            : 13,
                     fontWeight: FontWeight.w500,
                   ),
                   labelColor: Colors.white,
@@ -490,36 +480,33 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                     Tab(
                       icon: Icon(
                         Icons.calendar_today,
-                        size:
-                            _isMobile(context)
-                                ? 20
-                                : _isDesktop(context)
-                                ? 26
-                                : 22,
+                        size: _isMobile(context)
+                            ? 18
+                            : _isDesktop(context)
+                                ? 22
+                                : 20,
                       ),
                       text: _isMobile(context) ? null : 'Calendario',
                     ),
                     Tab(
                       icon: Icon(
                         Icons.history,
-                        size:
-                            _isMobile(context)
-                                ? 20
-                                : _isDesktop(context)
-                                ? 26
-                                : 22,
+                        size: _isMobile(context)
+                            ? 18
+                            : _isDesktop(context)
+                                ? 22
+                                : 20,
                       ),
                       text: _isMobile(context) ? null : 'Historial',
                     ),
                     Tab(
                       icon: Icon(
                         Icons.notifications,
-                        size:
-                            _isMobile(context)
-                                ? 20
-                                : _isDesktop(context)
-                                ? 26
-                                : 22,
+                        size: _isMobile(context)
+                            ? 18
+                            : _isDesktop(context)
+                                ? 22
+                                : 20,
                       ),
                       text: _isMobile(context) ? null : 'Notificaciones',
                     ),
@@ -539,10 +526,9 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
       {
         'icon': Icons.calendar_today_outlined,
         'label': 'Próximo Reemplazo',
-        'value':
-            _selectedDay != null
-                ? DateFormat('dd/MM/yyyy').format(_selectedDay!)
-                : 'No programado',
+        'value': _selectedDay != null
+            ? DateFormat('dd/MM/yyyy').format(_selectedDay!)
+            : 'No programado',
       },
       {
         'icon': Icons.change_circle_outlined,
@@ -572,20 +558,18 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
       );
     } else {
       return Row(
-        children:
-            stats.asMap().entries.map((entry) {
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    right:
-                        entry.key < stats.length - 1
-                            ? (_isDesktop(context) ? 20 : 16)
-                            : 0,
-                  ),
-                  child: _buildStatCard(entry.value, entry.key),
-                ),
-              );
-            }).toList(),
+        children: stats.asMap().entries.map((entry) {
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                right: entry.key < stats.length - 1
+                    ? (_isDesktop(context) ? 16 : 12)
+                    : 0,
+              ),
+              child: _buildStatCard(entry.value, entry.key),
+            ),
+          );
+        }).toList(),
       );
     }
   }
@@ -596,8 +580,8 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
             _isMobile(context)
                 ? 12
                 : _isDesktop(context)
-                ? 18
-                : 16,
+                    ? 16
+                    : 14,
           ),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.1),
@@ -607,12 +591,11 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
             children: [
               Icon(
                     stat['icon'],
-                    size:
-                        _isMobile(context)
-                            ? 20
-                            : _isDesktop(context)
-                            ? 28
-                            : 24,
+                    size: _isMobile(context)
+                        ? 18
+                        : _isDesktop(context)
+                            ? 24
+                            : 20,
                     color: Colors.white,
                   )
                   .animate(
@@ -624,22 +607,20 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                     duration: 1500.ms,
                   ),
               SizedBox(
-                height:
-                    _isMobile(context)
-                        ? 4
-                        : _isDesktop(context)
+                height: _isMobile(context)
+                    ? 4
+                    : _isDesktop(context)
                         ? 8
                         : 6,
               ),
               Text(
                 stat['label'],
                 style: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 10
-                          : _isDesktop(context)
-                          ? 13
-                          : 12,
+                  fontSize: _isMobile(context)
+                      ? 9
+                      : _isDesktop(context)
+                          ? 12
+                          : 10,
                   color: Colors.white.withOpacity(0.8),
                 ),
                 textAlign: TextAlign.center,
@@ -649,12 +630,11 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
               Text(
                 stat['value'],
                 style: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 12
-                          : _isDesktop(context)
-                          ? 15
-                          : 14,
+                  fontSize: _isMobile(context)
+                      ? 11
+                      : _isDesktop(context)
+                          ? 14
+                          : 12,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
@@ -670,61 +650,70 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
         .slideY(begin: 0.2, end: 0);
   }
 
-  // Tab de Calendario optimizado para desktop
+  // Tab de Calendario MEJORADO con mejor distribución del espacio
   Widget _buildCalendarTab() {
     return SingleChildScrollView(
       padding: EdgeInsets.all(
         _isMobile(context)
             ? 16
             : _isTablet(context)
-            ? 20
-            : 40,
+                ? 20
+                : 32,
       ),
-      child:
-          _isDesktop(context)
-              ? Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: _isLargeDesktop(context) ? 3 : 2,
-                    child: _buildCalendarCard(),
-                  ),
-                  SizedBox(width: _isLargeDesktop(context) ? 40 : 32),
-                  Expanded(
-                    flex: _isLargeDesktop(context) ? 2 : 1,
-                    child:
-                        _showReplacementForm
-                            ? _buildReplacementForm()
-                            : _buildCalendarPrompt(),
-                  ),
-                ],
-              )
-              : Column(
-                children: [
-                  _buildCalendarCard(),
-                  SizedBox(height: _isMobile(context) ? 16 : 20),
-                  _showReplacementForm
+      child: _isDesktop(context)
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Calendario con más espacio
+                Expanded(
+                  flex: _getCalendarFormFlex(context)[0],
+                  child: _buildCalendarCard(),
+                ),
+                SizedBox(width: _isLargeDesktop(context) ? 32 : 24),
+                // Formulario/Prompt con menos espacio
+                Expanded(
+                  flex: _getCalendarFormFlex(context)[1],
+                  child: _showReplacementForm
                       ? _buildReplacementForm()
                       : _buildCalendarPrompt(),
-                ],
-              ),
+                ),
+              ],
+            )
+          : Column(
+              children: [
+                _buildCalendarCard(),
+                SizedBox(height: _isMobile(context) ? 16 : 20),
+                _showReplacementForm
+                    ? _buildReplacementForm()
+                    : _buildCalendarPrompt(),
+              ],
+            ),
     );
   }
 
+  // Calendario mejorado con animaciones de abeja espectaculares
   Widget _buildCalendarCard() {
     return Card(
-      elevation: _isDesktop(context) ? 6 : 2,
+      elevation: _isDesktop(context) ? 8 : 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(_isDesktop(context) ? 24 : 16),
+        borderRadius: BorderRadius.circular(_isDesktop(context) ? 20 : 16),
         side: const BorderSide(color: Color(0xFFFDE68A), width: 1),
       ),
-      child: Padding(
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(_isDesktop(context) ? 20 : 16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.white, const Color(0xFFFEF3C7).withOpacity(0.1)],
+          ),
+        ),
         padding: EdgeInsets.all(
           _isMobile(context)
-              ? 12
+              ? 16
               : _isDesktop(context)
-              ? 32
-              : 16,
+                  ? 28
+                  : 20,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -732,27 +721,26 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
             Text(
               'Seleccionar Fecha',
               style: GoogleFonts.poppins(
-                fontSize:
-                    _isMobile(context)
-                        ? 18
-                        : _isDesktop(context)
-                        ? 22
+                fontSize: _isMobile(context)
+                    ? 18
+                    : _isDesktop(context)
+                        ? 24
                         : 20,
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF92400E),
               ),
             ),
-            SizedBox(height: _isDesktop(context) ? 24 : 16),
+            SizedBox(height: _isDesktop(context) ? 20 : 16),
+            // Calendario con animaciones mejoradas
             TableCalendar(
               firstDay: DateTime.utc(2023, 1, 1),
               lastDay: DateTime.utc(2025, 12, 31),
               focusedDay: _focusedDay,
               calendarFormat: _calendarFormat,
               selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-              enabledDayPredicate:
-                  (day) => day.isAfter(
-                    DateTime.now().subtract(const Duration(days: 1)),
-                  ),
+              enabledDayPredicate: (day) => day.isAfter(
+                DateTime.now().subtract(const Duration(days: 1)),
+              ),
               onDaySelected: (selectedDay, focusedDay) {
                 setState(() {
                   _selectedDay = selectedDay;
@@ -768,13 +756,72 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
               onPageChanged: (focusedDay) {
                 _focusedDay = focusedDay;
               },
+              rowHeight: _isMobile(context)
+                  ? 48
+                  : _isDesktop(context)
+                      ? 64
+                      : 56,
               calendarStyle: CalendarStyle(
+                cellMargin: EdgeInsets.all(
+                  _isMobile(context)
+                      ? 4
+                      : _isDesktop(context)
+                          ? 8
+                          : 6,
+                ),
+                cellPadding: EdgeInsets.all(
+                  _isMobile(context)
+                      ? 8
+                      : _isDesktop(context)
+                          ? 12
+                          : 10,
+                ),
+                defaultTextStyle: GoogleFonts.poppins(
+                  fontSize: _isMobile(context)
+                      ? 14
+                      : _isDesktop(context)
+                          ? 18
+                          : 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                weekendTextStyle: GoogleFonts.poppins(
+                  fontSize: _isMobile(context)
+                      ? 14
+                      : _isDesktop(context)
+                          ? 18
+                          : 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.red[600],
+                ),
+                selectedTextStyle: GoogleFonts.poppins(
+                  fontSize: _isMobile(context)
+                      ? 14
+                      : _isDesktop(context)
+                          ? 18
+                          : 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                todayTextStyle: GoogleFonts.poppins(
+                  fontSize: _isMobile(context)
+                      ? 14
+                      : _isDesktop(context)
+                          ? 18
+                          : 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
                 todayDecoration: BoxDecoration(
-                  color: const Color(0xFFFBBF24).withOpacity(0.5),
+                  color: const Color(0xFFFBBF24).withOpacity(0.7),
                   shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFD97706), width: 2),
                 ),
                 selectedDecoration: const BoxDecoration(
-                  color: Color(0xFFD97706),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFD97706), Color(0xFFB45309)],
+                  ),
                   shape: BoxShape.circle,
                 ),
                 markerDecoration: const BoxDecoration(
@@ -785,51 +832,17 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                   color: Colors.grey[300],
                   shape: BoxShape.circle,
                 ),
-                cellMargin: EdgeInsets.all(
-                  _isMobile(context)
-                      ? 2
-                      : _isDesktop(context)
-                      ? 8
-                      : 4,
-                ),
-                defaultTextStyle: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 14
-                          : _isDesktop(context)
-                          ? 16
-                          : 15,
-                ),
-                weekendTextStyle: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 14
-                          : _isDesktop(context)
-                          ? 16
-                          : 15,
-                  color: Colors.red[600],
-                ),
-                disabledTextStyle: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 14
-                          : _isDesktop(context)
-                          ? 16
-                          : 15,
-                  color: Colors.grey[400],
-                ),
-                cellPadding: EdgeInsets.all(_isDesktop(context) ? 12 : 4),
               ),
               headerStyle: HeaderStyle(
                 titleCentered: true,
                 titleTextStyle: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 16
-                          : _isDesktop(context)
-                          ? 20
+                  fontSize: _isMobile(context)
+                      ? 16
+                      : _isDesktop(context)
+                          ? 22
                           : 18,
                   fontWeight: FontWeight.bold,
+                  color: const Color(0xFF92400E),
                 ),
                 formatButtonDecoration: BoxDecoration(
                   color: const Color(0xFFFBBF24),
@@ -837,50 +850,55 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 ),
                 formatButtonTextStyle: GoogleFonts.poppins(
                   color: Colors.white,
-                  fontSize:
-                      _isMobile(context)
-                          ? 12
-                          : _isDesktop(context)
+                  fontSize: _isMobile(context)
+                      ? 12
+                      : _isDesktop(context)
                           ? 14
                           : 13,
                   fontWeight: FontWeight.w600,
                 ),
                 leftChevronIcon: Icon(
                   Icons.chevron_left,
-                  size:
-                      _isMobile(context)
-                          ? 20
-                          : _isDesktop(context)
-                          ? 26
+                  size: _isMobile(context)
+                      ? 20
+                      : _isDesktop(context)
+                          ? 28
                           : 24,
+                  color: const Color(0xFF92400E),
                 ),
                 rightChevronIcon: Icon(
                   Icons.chevron_right,
-                  size:
-                      _isMobile(context)
-                          ? 20
-                          : _isDesktop(context)
-                          ? 26
+                  size: _isMobile(context)
+                      ? 20
+                      : _isDesktop(context)
+                          ? 28
                           : 24,
+                  color: const Color(0xFF92400E),
+                ),
+                headerPadding: EdgeInsets.symmetric(
+                  vertical: _isMobile(context)
+                      ? 8
+                      : _isDesktop(context)
+                          ? 16
+                          : 12,
                 ),
               ),
               daysOfWeekStyle: DaysOfWeekStyle(
                 weekdayStyle: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 12
-                          : _isDesktop(context)
-                          ? 14
-                          : 13,
+                  fontSize: _isMobile(context)
+                      ? 12
+                      : _isDesktop(context)
+                          ? 16
+                          : 14,
                   fontWeight: FontWeight.w600,
+                  color: const Color(0xFF92400E),
                 ),
                 weekendStyle: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 12
-                          : _isDesktop(context)
-                          ? 14
-                          : 13,
+                  fontSize: _isMobile(context)
+                      ? 12
+                      : _isDesktop(context)
+                          ? 16
+                          : 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.red[600],
                 ),
@@ -890,19 +908,22 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                     .where((event) => isSameDay(event['date'], day))
                     .toList();
               },
-              // Builder personalizado con abejita mejorada
               calendarBuilders: CalendarBuilders(
+                // ANIMACIÓN MEJORADA DE LA ABEJITA
                 selectedBuilder: (context, day, focusedDay) {
                   return Container(
-                    margin: EdgeInsets.all(_isDesktop(context) ? 8 : 4),
+                    margin: EdgeInsets.all(
+                      _isMobile(context)
+                          ? 4
+                          : _isDesktop(context)
+                              ? 8
+                              : 6,
+                    ),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
+                      gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFFD97706),
-                          const Color(0xFFB45309),
-                        ],
+                        colors: [Color(0xFFD97706), Color(0xFFB45309)],
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
@@ -910,6 +931,12 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                           color: const Color(0xFFD97706).withOpacity(0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
+                        ),
+                        // Sombra adicional para más profundidad
+                        BoxShadow(
+                          color: const Color(0xFFD97706).withOpacity(0.2),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
@@ -921,70 +948,145 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                           '${day.day}',
                           style: GoogleFonts.poppins(
                             color: Colors.white,
-                            fontSize:
-                                _isMobile(context)
-                                    ? 14
-                                    : _isDesktop(context)
-                                    ? 16
-                                    : 15,
+                            fontSize: _isMobile(context)
+                                ? 14
+                                : _isDesktop(context)
+                                    ? 18
+                                    : 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        // Abejita mejorada en la parte superior
+                        // Abejita mejorada con múltiples animaciones
                         Positioned(
-                          top: _isDesktop(context) ? -2 : -1,
-                          right: _isDesktop(context) ? -2 : -1,
+                          top: _isMobile(context)
+                              ? -2
+                              : _isDesktop(context)
+                                  ? -4
+                                  : -3,
+                          right: _isMobile(context)
+                              ? -2
+                              : _isDesktop(context)
+                                  ? -4
+                                  : -3,
                           child: Container(
                             padding: EdgeInsets.all(
-                              _isDesktop(context) ? 4 : 3,
+                              _isMobile(context)
+                                  ? 3
+                                  : _isDesktop(context)
+                                      ? 5
+                                      : 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              // Usar el mismo estilo que la fecha actual
+                              color: const Color(0xFFFBBF24).withOpacity(0.7),
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 4,
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 6,
                                   spreadRadius: 1,
                                 ),
+                                // Sombra dorada para efecto de brillo
+                                BoxShadow(
+                                  color: const Color(0xFFFBBF24).withOpacity(0.5),
+                                  blurRadius: 12,
+                                  spreadRadius: 2,
+                                ),
                               ],
+                              // Borde dorado similar al de la fecha actual
+                              border: Border.all(
+                                color: const Color(0xFFD97706),
+                                width: 2,
+                              ),
                             ),
                             child: Text(
-                                  '🐝',
-                                  style: TextStyle(
-                                    fontSize:
-                                        _isMobile(context)
-                                            ? 12
-                                            : _isDesktop(context)
-                                            ? 16
-                                            : 14,
-                                  ),
+                              '🐝',
+                              style: TextStyle(
+                                fontSize: _isMobile(context)
+                                    ? 12
+                                    : _isDesktop(context)
+                                        ? 16
+                                        : 14,
+                              ),
+                            )
+                                // Animación de entrada con rebote
+                                .animate()
+                                .scale(
+                                  begin: const Offset(0, 0),
+                                  end: const Offset(1, 1),
+                                  duration: 600.ms,
+                                  curve: Curves.elasticOut,
                                 )
+                                .then()
+                                // Animación continua de pulsación
                                 .animate(
-                                  onPlay:
-                                      (controller) =>
-                                          controller.repeat(reverse: true),
+                                  onPlay: (controller) =>
+                                      controller.repeat(reverse: true),
                                 )
                                 .scale(
                                   begin: const Offset(1, 1),
-                                  end: const Offset(1.3, 1.3),
-                                  duration: 1200.ms,
+                                  end: const Offset(1.2, 1.2),
+                                  duration: 1500.ms,
+                                  curve: Curves.easeInOut,
                                 )
-                                .then()
+                                // Rotación sutil para simular vuelo
+                                .animate(
+                                  onPlay: (controller) =>
+                                      controller.repeat(reverse: true),
+                                )
                                 .rotate(
                                   begin: -0.1,
                                   end: 0.1,
-                                  duration: 800.ms,
+                                  duration: 2000.ms,
+                                  curve: Curves.easeInOut,
+                                )
+                                // Efecto de brillo ocasional
+                                .animate(
+                                  onPlay: (controller) => controller.repeat(),
+                                )
+                                .shimmer(
+                                  duration: 3000.ms,
+                                  color: Colors.white.withOpacity(0.3),
                                 ),
                           ),
                         ),
+                        // Partículas de polen
+                        ...List.generate(3, (index) {
+                          return Positioned(
+                            top: 10 + (index * 8.0),
+                            right: 8 + (index * 6.0),
+                            child: Container(
+                              width: 2,
+                              height: 2,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFBBF24).withOpacity(0.7),
+                                shape: BoxShape.circle,
+                              ),
+                            )
+                                .animate(
+                                  onPlay: (controller) => controller.repeat(),
+                                )
+                                .fadeIn(
+                                  delay: Duration(milliseconds: 500 + (index * 200)),
+                                  duration: 1000.ms,
+                                )
+                                .then()
+                                .fadeOut(duration: 1000.ms),
+                          );
+                        }),
                       ],
                     ),
                   );
                 },
                 todayBuilder: (context, day, focusedDay) {
                   return Container(
-                    margin: EdgeInsets.all(_isDesktop(context) ? 8 : 4),
+                    margin: EdgeInsets.all(
+                      _isMobile(context)
+                          ? 4
+                          : _isDesktop(context)
+                              ? 8
+                              : 6,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFBBF24).withOpacity(0.7),
                       shape: BoxShape.circle,
@@ -998,36 +1100,61 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                         '${day.day}',
                         style: GoogleFonts.poppins(
                           color: Colors.white,
-                          fontSize:
-                              _isMobile(context)
-                                  ? 14
-                                  : _isDesktop(context)
-                                  ? 16
-                                  : 15,
+                          fontSize: _isMobile(context)
+                              ? 14
+                              : _isDesktop(context)
+                                  ? 18
+                                  : 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   );
                 },
+                // Marcadores mejorados con animación
                 markerBuilder: (context, day, events) {
                   if (events.isNotEmpty) {
                     return Positioned(
                       bottom: 1,
                       child: Container(
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF92400E),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF92400E), Color(0xFFFBBF24)],
+                          ),
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF92400E).withOpacity(0.5),
+                              blurRadius: 4,
+                              spreadRadius: 1,
+                            ),
+                          ],
                         ),
-                        width: _isDesktop(context) ? 8 : 6,
-                        height: _isDesktop(context) ? 8 : 6,
-                      ),
+                        width: _isMobile(context)
+                            ? 8
+                            : _isDesktop(context)
+                                ? 12
+                                : 10,
+                        height: _isMobile(context)
+                            ? 8
+                            : _isDesktop(context)
+                                ? 12
+                                : 10,
+                      )
+                          .animate(
+                            onPlay: (controller) => controller.repeat(reverse: true),
+                          )
+                          .scale(
+                            begin: const Offset(0.8, 0.8),
+                            end: const Offset(1.2, 1.2),
+                            duration: 1000.ms,
+                          ),
                     );
                   }
                   return null;
                 },
               ),
-            ),
+            )
           ],
         ),
       ),
@@ -1039,12 +1166,12 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
     return Card(
       elevation: _isDesktop(context) ? 6 : 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(_isDesktop(context) ? 24 : 16),
+        borderRadius: BorderRadius.circular(_isDesktop(context) ? 20 : 16),
         side: const BorderSide(color: Color(0xFFFDE68A), width: 1),
       ),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(_isDesktop(context) ? 24 : 16),
+          borderRadius: BorderRadius.circular(_isDesktop(context) ? 20 : 16),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -1058,17 +1185,18 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
           _isMobile(context)
               ? 16
               : _isDesktop(context)
-              ? 32
-              : 18,
+                  ? 24
+                  : 18,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
                 Text(
                       '🐝',
-                      style: TextStyle(fontSize: _isDesktop(context) ? 24 : 20),
+                      style: TextStyle(fontSize: _isDesktop(context) ? 20 : 18),
                     )
                     .animate(
                       onPlay: (controller) => controller.repeat(reverse: true),
@@ -1079,12 +1207,11 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                   child: Text(
                     'Programar Reemplazo',
                     style: GoogleFonts.poppins(
-                      fontSize:
-                          _isMobile(context)
+                      fontSize: _isMobile(context)
+                          ? 16
+                          : _isDesktop(context)
                               ? 18
-                              : _isDesktop(context)
-                              ? 22
-                              : 20,
+                              : 17,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF92400E),
                     ),
@@ -1093,47 +1220,44 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
               ],
             ),
             const SizedBox(height: 4),
-            Text(
-              'Fecha seleccionada: ${DateFormat('dd/MM/yyyy').format(_selectedDay!)}',
-              style: GoogleFonts.poppins(
-                fontSize:
-                    _isMobile(context)
-                        ? 14
-                        : _isDesktop(context)
-                        ? 16
-                        : 15,
-                color: Colors.black87,
-              ),
-            ),
-            SizedBox(
-              height:
-                  _isMobile(context)
-                      ? 16
+            if (_selectedDay != null)
+              Text(
+                'Fecha: ${DateFormat('dd/MM/yyyy').format(_selectedDay!)}',
+                style: GoogleFonts.poppins(
+                  fontSize: _isMobile(context)
+                      ? 12
                       : _isDesktop(context)
-                      ? 24
-                      : 20,
+                          ? 14
+                          : 13,
+                  color: Colors.black87,
+                ),
+              ),
+            SizedBox(
+              height: _isMobile(context)
+                  ? 12
+                  : _isDesktop(context)
+                      ? 16
+                      : 14,
             ),
 
             // Tipo de reina
             Text(
               'Tipo de Reina',
               style: GoogleFonts.poppins(
-                fontSize:
-                    _isMobile(context)
-                        ? 14
-                        : _isDesktop(context)
+                fontSize: _isMobile(context)
+                    ? 14
+                    : _isDesktop(context)
                         ? 16
                         : 15,
                 fontWeight: FontWeight.w600,
               ),
             ),
             SizedBox(
-              height:
-                  _isMobile(context)
-                      ? 8
-                      : _isDesktop(context)
-                      ? 12
-                      : 10,
+              height: _isMobile(context)
+                  ? 6
+                  : _isDesktop(context)
+                      ? 10
+                      : 8,
             ),
             Container(
               decoration: BoxDecoration(
@@ -1148,25 +1272,22 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
-                    horizontal:
-                        _isMobile(context)
-                            ? 12
-                            : _isDesktop(context)
-                            ? 18
-                            : 16,
-                    vertical:
-                        _isMobile(context)
-                            ? 12
-                            : _isDesktop(context)
+                    horizontal: _isMobile(context)
+                        ? 12
+                        : _isDesktop(context)
                             ? 16
                             : 14,
+                    vertical: _isMobile(context)
+                        ? 10
+                        : _isDesktop(context)
+                            ? 14
+                            : 12,
                   ),
                 ),
                 style: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 14
-                          : _isDesktop(context)
+                  fontSize: _isMobile(context)
+                      ? 14
+                      : _isDesktop(context)
                           ? 16
                           : 15,
                 ),
@@ -1183,34 +1304,31 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
               ),
             ),
             SizedBox(
-              height:
-                  _isMobile(context)
+              height: _isMobile(context)
+                  ? 12
+                  : _isDesktop(context)
                       ? 16
-                      : _isDesktop(context)
-                      ? 24
-                      : 20,
+                      : 14,
             ),
 
             // Notas
             Text(
               'Notas',
               style: GoogleFonts.poppins(
-                fontSize:
-                    _isMobile(context)
-                        ? 14
-                        : _isDesktop(context)
+                fontSize: _isMobile(context)
+                    ? 14
+                    : _isDesktop(context)
                         ? 16
                         : 15,
                 fontWeight: FontWeight.w600,
               ),
             ),
             SizedBox(
-              height:
-                  _isMobile(context)
-                      ? 8
-                      : _isDesktop(context)
-                      ? 12
-                      : 10,
+              height: _isMobile(context)
+                  ? 6
+                  : _isDesktop(context)
+                      ? 10
+                      : 8,
             ),
             Container(
               decoration: BoxDecoration(
@@ -1225,57 +1343,51 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 decoration: InputDecoration(
                   hintText: 'Añade notas sobre el reemplazo...',
                   hintStyle: GoogleFonts.poppins(
-                    fontSize:
-                        _isMobile(context)
-                            ? 14
-                            : _isDesktop(context)
+                    fontSize: _isMobile(context)
+                        ? 14
+                        : _isDesktop(context)
                             ? 16
                             : 15,
                   ),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
-                    horizontal:
-                        _isMobile(context)
-                            ? 12
-                            : _isDesktop(context)
-                            ? 18
-                            : 16,
-                    vertical:
-                        _isMobile(context)
-                            ? 12
-                            : _isDesktop(context)
+                    horizontal: _isMobile(context)
+                        ? 12
+                        : _isDesktop(context)
                             ? 16
                             : 14,
+                    vertical: _isMobile(context)
+                        ? 10
+                        : _isDesktop(context)
+                            ? 14
+                            : 12,
                   ),
                 ),
                 style: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 14
-                          : _isDesktop(context)
+                  fontSize: _isMobile(context)
+                      ? 14
+                      : _isDesktop(context)
                           ? 16
                           : 15,
                 ),
-                maxLines:
-                    _isMobile(context)
-                        ? 3
-                        : _isDesktop(context)
+                maxLines: _isMobile(context)
+                    ? 3
+                    : _isDesktop(context)
                         ? 4
                         : 3,
               ),
             ),
             SizedBox(
-              height:
-                  _isMobile(context)
+              height: _isMobile(context)
+                  ? 12
+                  : _isDesktop(context)
                       ? 16
-                      : _isDesktop(context)
-                      ? 24
-                      : 20,
+                      : 14,
             ),
 
             // Notificaciones
             Container(
-              padding: EdgeInsets.all(_isDesktop(context) ? 20 : 16),
+              padding: EdgeInsets.all(_isDesktop(context) ? 16 : 12),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(
@@ -1292,10 +1404,9 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                         Text(
                           'Notificaciones',
                           style: GoogleFonts.poppins(
-                            fontSize:
-                                _isMobile(context)
-                                    ? 14
-                                    : _isDesktop(context)
+                            fontSize: _isMobile(context)
+                                ? 14
+                                : _isDesktop(context)
                                     ? 16
                                     : 15,
                             fontWeight: FontWeight.w600,
@@ -1304,10 +1415,9 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                         Text(
                           'Recibir recordatorios',
                           style: GoogleFonts.poppins(
-                            fontSize:
-                                _isMobile(context)
-                                    ? 12
-                                    : _isDesktop(context)
+                            fontSize: _isMobile(context)
+                                ? 12
+                                : _isDesktop(context)
                                     ? 14
                                     : 13,
                             color: Colors.black54,
@@ -1332,15 +1442,14 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
               ),
             ),
             SizedBox(
-              height:
-                  _isMobile(context)
+              height: _isMobile(context)
+                  ? 16
+                  : _isDesktop(context)
                       ? 20
-                      : _isDesktop(context)
-                      ? 28
-                      : 24,
+                      : 18,
             ),
 
-            // Botones optimizados para desktop
+            // Botones de acción
             Column(
               children: [
                 SizedBox(
@@ -1351,12 +1460,7 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                       backgroundColor: const Color(0xFFD97706),
                       foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(
-                        vertical:
-                            _isMobile(context)
-                                ? 12
-                                : _isDesktop(context)
-                                ? 18
-                                : 16,
+                        vertical: _isMobile(context) ? 12 : 14,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
@@ -1371,43 +1475,29 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                         Text(
                           '🐝',
                           style: TextStyle(
-                            fontSize: _isDesktop(context) ? 18 : 16,
+                            fontSize: _isDesktop(context) ? 16 : 14,
                           ),
                         ),
-                        SizedBox(width: _isDesktop(context) ? 12 : 8),
+                        SizedBox(width: _isDesktop(context) ? 10 : 8),
                         Text(
                           'Programar Reemplazo',
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
-                            fontSize:
-                                _isMobile(context)
-                                    ? 14
-                                    : _isDesktop(context)
-                                    ? 16
-                                    : 15,
+                            fontSize: _isMobile(context) ? 14 : 15,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                SizedBox(height: _isDesktop(context) ? 16 : 12),
+                SizedBox(height: _isDesktop(context) ? 12 : 8),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: () {
-                      setState(() {
-                        _showReplacementForm = false;
-                      });
-                    },
+                    onPressed: () => setState(() => _showReplacementForm = false),
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(
-                        vertical:
-                            _isMobile(context)
-                                ? 12
-                                : _isDesktop(context)
-                                ? 18
-                                : 16,
+                        vertical: _isMobile(context) ? 12 : 14,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
@@ -1421,12 +1511,7 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                       style: GoogleFonts.poppins(
                         color: const Color(0xFF92400E),
                         fontWeight: FontWeight.w600,
-                        fontSize:
-                            _isMobile(context)
-                                ? 14
-                                : _isDesktop(context)
-                                ? 16
-                                : 15,
+                        fontSize: _isMobile(context) ? 14 : 15,
                       ),
                     ),
                   ),
@@ -1444,7 +1529,7 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
     return Card(
       elevation: _isDesktop(context) ? 6 : 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(_isDesktop(context) ? 24 : 16),
+        borderRadius: BorderRadius.circular(_isDesktop(context) ? 20 : 16),
         side: const BorderSide(color: Color(0xFFFDE68A), width: 1),
       ),
       child: Container(
@@ -1452,37 +1537,37 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
           _isMobile(context)
               ? 20
               : _isDesktop(context)
-              ? 40
-              : 22,
+                  ? 32
+                  : 24,
         ),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(_isDesktop(context) ? 24 : 16),
+          borderRadius: BorderRadius.circular(_isDesktop(context) ? 20 : 16),
           color: Colors.white,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
                   padding: EdgeInsets.all(
                     _isMobile(context)
                         ? 12
                         : _isDesktop(context)
-                        ? 20
-                        : 16,
+                            ? 16
+                            : 14,
                   ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEF3C7),
                     shape: BoxShape.circle,
                   ),
                   child: Text(
                     '🐝',
                     style: TextStyle(
-                      fontSize:
-                          _isMobile(context)
-                              ? 32
-                              : _isDesktop(context)
-                              ? 44
-                              : 36,
+                      fontSize: _isMobile(context)
+                          ? 28
+                          : _isDesktop(context)
+                              ? 36
+                              : 32,
                     ),
                   ),
                 )
@@ -1495,43 +1580,39 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                   duration: 1500.ms,
                 ),
             SizedBox(
-              height:
-                  _isMobile(context)
-                      ? 16
-                      : _isDesktop(context)
-                      ? 24
-                      : 20,
+              height: _isMobile(context)
+                  ? 12
+                  : _isDesktop(context)
+                      ? 20
+                      : 16,
             ),
             Text(
               'Selecciona una Fecha',
               style: GoogleFonts.poppins(
-                fontSize:
-                    _isMobile(context)
-                        ? 16
-                        : _isDesktop(context)
-                        ? 20
+                fontSize: _isMobile(context)
+                    ? 16
+                    : _isDesktop(context)
+                        ? 18
                         : 17,
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF92400E),
               ),
             ),
             SizedBox(
-              height:
-                  _isMobile(context)
-                      ? 8
-                      : _isDesktop(context)
+              height: _isMobile(context)
+                  ? 8
+                  : _isDesktop(context)
                       ? 12
                       : 10,
             ),
             Text(
               'Toca en una fecha del calendario para programar un reemplazo de abeja reina',
               style: GoogleFonts.poppins(
-                fontSize:
-                    _isMobile(context)
+                fontSize: _isMobile(context)
+                    ? 12
+                    : _isDesktop(context)
                         ? 14
-                        : _isDesktop(context)
-                        ? 16
-                        : 15,
+                        : 13,
                 color: Colors.black54,
               ),
               textAlign: TextAlign.center,
@@ -1542,41 +1623,40 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
     );
   }
 
-  // Resto de métodos optimizados para desktop...
+  // Tab de Historial optimizado
   Widget _buildHistoryTab() {
     return Padding(
       padding: EdgeInsets.all(
         _isMobile(context)
             ? 16
             : _isTablet(context)
-            ? 20
-            : 40,
+                ? 20
+                : 32,
       ),
-      child:
-          _isDesktop(context)
-              ? GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: _isLargeDesktop(context) ? 3 : 2,
-                  crossAxisSpacing: _isLargeDesktop(context) ? 32 : 24,
-                  mainAxisSpacing: _isLargeDesktop(context) ? 32 : 24,
-                  childAspectRatio: _isLargeDesktop(context) ? 1.3 : 1.4,
-                ),
-                itemCount: _replacementHistory.length,
-                itemBuilder: (context, index) {
-                  return _buildHistoryCard(_replacementHistory[index], index);
-                },
-              )
-              : ListView.builder(
-                itemCount: _replacementHistory.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: _isMobile(context) ? 16 : 20,
-                    ),
-                    child: _buildHistoryCard(_replacementHistory[index], index),
-                  );
-                },
+      child: _isDesktop(context)
+          ? GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: _isLargeDesktop(context) ? 3 : 2,
+                crossAxisSpacing: _isLargeDesktop(context) ? 24 : 20,
+                mainAxisSpacing: _isLargeDesktop(context) ? 24 : 20,
+                childAspectRatio: _isLargeDesktop(context) ? 1.3 : 1.4,
               ),
+              itemCount: _replacementHistory.length,
+              itemBuilder: (context, index) {
+                return _buildHistoryCard(_replacementHistory[index], index);
+              },
+            )
+          : ListView.builder(
+              itemCount: _replacementHistory.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: _isMobile(context) ? 16 : 20,
+                  ),
+                  child: _buildHistoryCard(_replacementHistory[index], index),
+                );
+              },
+            ),
     );
   }
 
@@ -1612,13 +1692,13 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
     return Card(
           elevation: _isDesktop(context) ? 6 : 2,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_isDesktop(context) ? 20 : 12),
+            borderRadius: BorderRadius.circular(_isDesktop(context) ? 16 : 12),
             side: const BorderSide(color: Color(0xFFFDE68A), width: 1),
           ),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(
-                _isDesktop(context) ? 20 : 12,
+                _isDesktop(context) ? 16 : 12,
               ),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -1633,8 +1713,8 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
               _isMobile(context)
                   ? 16
                   : _isDesktop(context)
-                  ? 28
-                  : 18,
+                      ? 20
+                      : 18,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1646,8 +1726,8 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                         _isMobile(context)
                             ? 8
                             : _isDesktop(context)
-                            ? 14
-                            : 10,
+                                ? 12
+                                : 10,
                       ),
                       decoration: const BoxDecoration(
                         color: Color(0xFFFEF3C7),
@@ -1656,22 +1736,20 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                       child: Text(
                         '🐝',
                         style: TextStyle(
-                          fontSize:
-                              _isMobile(context)
-                                  ? 20
-                                  : _isDesktop(context)
-                                  ? 26
-                                  : 24,
+                          fontSize: _isMobile(context)
+                              ? 18
+                              : _isDesktop(context)
+                                  ? 22
+                                  : 20,
                         ),
                       ),
                     ),
                     SizedBox(
-                      width:
-                          _isMobile(context)
-                              ? 12
-                              : _isDesktop(context)
-                              ? 20
-                              : 16,
+                      width: _isMobile(context)
+                          ? 12
+                          : _isDesktop(context)
+                              ? 16
+                              : 14,
                     ),
                     Expanded(
                       child: Column(
@@ -1680,10 +1758,9 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                           Text(
                             item['colmena'],
                             style: GoogleFonts.poppins(
-                              fontSize:
-                                  _isMobile(context)
-                                      ? 16
-                                      : _isDesktop(context)
+                              fontSize: _isMobile(context)
+                                  ? 16
+                                  : _isDesktop(context)
                                       ? 18
                                       : 17,
                               fontWeight: FontWeight.bold,
@@ -1692,10 +1769,9 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                           Text(
                             'Reina: ${item['queenType']}',
                             style: GoogleFonts.poppins(
-                              fontSize:
-                                  _isMobile(context)
-                                      ? 14
-                                      : _isDesktop(context)
+                              fontSize: _isMobile(context)
+                                  ? 14
+                                  : _isDesktop(context)
                                       ? 16
                                       : 15,
                               color: Colors.black87,
@@ -1706,18 +1782,16 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                     ),
                     Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal:
-                            _isMobile(context)
-                                ? 8
-                                : _isDesktop(context)
-                                ? 14
-                                : 12,
-                        vertical:
-                            _isMobile(context)
-                                ? 4
-                                : _isDesktop(context)
-                                ? 8
-                                : 6,
+                        horizontal: _isMobile(context)
+                            ? 8
+                            : _isDesktop(context)
+                                ? 12
+                                : 10,
+                        vertical: _isMobile(context)
+                            ? 4
+                            : _isDesktop(context)
+                                ? 6
+                                : 5,
                       ),
                       decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
@@ -1728,29 +1802,26 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                         children: [
                           Icon(
                             statusIcon,
-                            size:
-                                _isMobile(context)
-                                    ? 14
-                                    : _isDesktop(context)
+                            size: _isMobile(context)
+                                ? 14
+                                : _isDesktop(context)
                                     ? 16
                                     : 15,
                             color: statusColor,
                           ),
                           SizedBox(
-                            width:
-                                _isMobile(context)
-                                    ? 4
-                                    : _isDesktop(context)
-                                    ? 8
-                                    : 6,
+                            width: _isMobile(context)
+                                ? 4
+                                : _isDesktop(context)
+                                    ? 6
+                                    : 5,
                           ),
                           Text(
                             statusText,
                             style: GoogleFonts.poppins(
-                              fontSize:
-                                  _isMobile(context)
-                                      ? 12
-                                      : _isDesktop(context)
+                              fontSize: _isMobile(context)
+                                  ? 12
+                                  : _isDesktop(context)
                                       ? 14
                                       : 13,
                               fontWeight: FontWeight.w600,
@@ -1763,71 +1834,64 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                   ],
                 ),
                 SizedBox(
-                  height:
-                      _isMobile(context)
-                          ? 12
-                          : _isDesktop(context)
-                          ? 20
-                          : 16,
+                  height: _isMobile(context)
+                      ? 12
+                      : _isDesktop(context)
+                          ? 16
+                          : 14,
                 ),
                 const Divider(),
                 SizedBox(
-                  height:
-                      _isMobile(context)
-                          ? 8
-                          : _isDesktop(context)
-                          ? 16
-                          : 12,
+                  height: _isMobile(context)
+                      ? 8
+                      : _isDesktop(context)
+                          ? 12
+                          : 10,
                 ),
                 Row(
                   children: [
                     Icon(
                       Icons.calendar_today,
-                      size:
-                          _isMobile(context)
-                              ? 14
-                              : _isDesktop(context)
-                              ? 16
-                              : 15,
+                      size: _isMobile(context)
+                          ? 14
+                          : _isDesktop(context)
+                                  ? 16
+                                  : 15,
                       color: Colors.black54,
                     ),
                     SizedBox(
-                      width:
-                          _isMobile(context)
-                              ? 4
-                              : _isDesktop(context)
-                              ? 8
-                              : 6,
+                      width: _isMobile(context)
+                          ? 4
+                          : _isDesktop(context)
+                                  ? 6
+                                  : 5,
                     ),
                     Text(
                       'Fecha: $formattedDate',
                       style: GoogleFonts.poppins(
-                        fontSize:
-                            _isMobile(context)
-                                ? 14
-                                : _isDesktop(context)
-                                ? 16
-                                : 15,
+                        fontSize: _isMobile(context)
+                            ? 14
+                            : _isDesktop(context)
+                                  ? 16
+                                  : 15,
                         color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
                 SizedBox(
-                  height:
-                      _isMobile(context)
-                          ? 8
-                          : _isDesktop(context)
-                          ? 16
-                          : 12,
+                  height: _isMobile(context)
+                      ? 8
+                      : _isDesktop(context)
+                          ? 12
+                          : 10,
                 ),
                 Text(
                   'Notas:',
                   style: GoogleFonts.poppins(
-                    fontSize:
-                        _isMobile(context)
-                            ? 14
-                            : _isDesktop(context)
+                    fontSize: _isMobile(context)
+                        ? 14
+                        : _isDesktop(context)
                             ? 16
                             : 15,
                     fontWeight: FontWeight.w600,
@@ -1836,17 +1900,15 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 Text(
                   item['notes'],
                   style: GoogleFonts.poppins(
-                    fontSize:
-                        _isMobile(context)
-                            ? 14
-                            : _isDesktop(context)
+                    fontSize: _isMobile(context)
+                        ? 14
+                        : _isDesktop(context)
                             ? 16
                             : 15,
                   ),
-                  maxLines:
-                      _isMobile(context)
-                          ? 2
-                          : _isDesktop(context)
+                  maxLines: _isMobile(context)
+                      ? 2
+                      : _isDesktop(context)
                           ? 3
                           : 2,
                   overflow: TextOverflow.ellipsis,
@@ -1860,24 +1922,25 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
         .slideY(begin: 0.1, end: 0);
   }
 
+  // Tab de Notificaciones optimizado
   Widget _buildNotificationsTab() {
     return SingleChildScrollView(
       padding: EdgeInsets.all(
         _isMobile(context)
             ? 16
             : _isTablet(context)
-            ? 20
-            : 40,
+                ? 20
+                : 32,
       ),
       child: Card(
         elevation: _isDesktop(context) ? 6 : 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_isDesktop(context) ? 24 : 16),
+          borderRadius: BorderRadius.circular(_isDesktop(context) ? 20 : 16),
           side: const BorderSide(color: Color(0xFFFDE68A), width: 1),
         ),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(_isDesktop(context) ? 24 : 16),
+            borderRadius: BorderRadius.circular(_isDesktop(context) ? 20 : 16),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -1888,8 +1951,8 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
             _isMobile(context)
                 ? 16
                 : _isDesktop(context)
-                ? 40
-                : 20,
+                    ? 32
+                    : 20,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1898,18 +1961,17 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 children: [
                   Text(
                     '🔔',
-                    style: TextStyle(fontSize: _isDesktop(context) ? 28 : 24),
+                    style: TextStyle(fontSize: _isDesktop(context) ? 24 : 20),
                   ),
                   SizedBox(width: _isDesktop(context) ? 16 : 12),
                   Expanded(
                     child: Text(
                       'Configuración de Notificaciones',
                       style: GoogleFonts.poppins(
-                        fontSize:
-                            _isMobile(context)
-                                ? 18
-                                : _isDesktop(context)
-                                ? 24
+                        fontSize: _isMobile(context)
+                            ? 18
+                            : _isDesktop(context)
+                                ? 22
                                 : 20,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF92400E),
@@ -1919,35 +1981,32 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 ],
               ),
               SizedBox(
-                height:
-                    _isMobile(context)
-                        ? 8
-                        : _isDesktop(context)
-                        ? 16
+                height: _isMobile(context)
+                    ? 8
+                    : _isDesktop(context)
+                        ? 12
                         : 10,
               ),
               Text(
                 'Personaliza cómo y cuándo quieres recibir notificaciones sobre el reemplazo de abejas reinas',
                 style: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 14
-                          : _isDesktop(context)
-                          ? 18
+                  fontSize: _isMobile(context)
+                      ? 14
+                      : _isDesktop(context)
+                          ? 16
                           : 15,
                   color: Colors.black54,
                 ),
               ),
               SizedBox(
-                height:
-                    _isMobile(context)
-                        ? 20
-                        : _isDesktop(context)
-                        ? 32
+                height: _isMobile(context)
+                    ? 20
+                    : _isDesktop(context)
+                        ? 28
                         : 24,
               ),
 
-              // Resto de la configuración de notificaciones...
+              // Configuración principal de notificaciones
               _buildNotificationSetting(
                 title: 'Notificaciones',
                 subtitle: 'Activa o desactiva todas las notificaciones',
@@ -1959,30 +2018,28 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                   });
                 },
               ),
-              SizedBox(height: _isDesktop(context) ? 32 : 24),
+              SizedBox(height: _isDesktop(context) ? 24 : 20),
 
               Text(
                 'Recordatorios',
                 style: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 16
-                          : _isDesktop(context)
-                          ? 20
+                  fontSize: _isMobile(context)
+                      ? 16
+                      : _isDesktop(context)
+                          ? 18
                           : 17,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               SizedBox(
-                height:
-                    _isMobile(context)
-                        ? 12
-                        : _isDesktop(context)
-                        ? 20
-                        : 16,
+                height: _isMobile(context)
+                    ? 12
+                    : _isDesktop(context)
+                        ? 16
+                        : 14,
               ),
 
-              // Grid responsivo mejorado para desktop
+              // Grid responsivo para recordatorios
               if (_isDesktop(context))
                 Column(
                   children: [
@@ -2000,7 +2057,7 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                             },
                           ),
                         ),
-                        const SizedBox(width: 24),
+                        const SizedBox(width: 20),
                         Expanded(
                           child: _buildNotificationOption(
                             title: 'Día del reemplazo',
@@ -2015,7 +2072,7 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     Row(
                       children: [
                         Expanded(
@@ -2073,27 +2130,25 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                   ],
                 ),
 
-              SizedBox(height: _isDesktop(context) ? 32 : 24),
+              SizedBox(height: _isDesktop(context) ? 24 : 20),
 
               Text(
                 'Canales de Notificación',
                 style: GoogleFonts.poppins(
-                  fontSize:
-                      _isMobile(context)
-                          ? 16
-                          : _isDesktop(context)
-                          ? 20
+                  fontSize: _isMobile(context)
+                      ? 16
+                      : _isDesktop(context)
+                          ? 18
                           : 17,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               SizedBox(
-                height:
-                    _isMobile(context)
-                        ? 12
-                        : _isDesktop(context)
-                        ? 20
-                        : 16,
+                height: _isMobile(context)
+                    ? 12
+                    : _isDesktop(context)
+                        ? 16
+                        : 14,
               ),
               _buildNotificationChannel(
                 title: 'Notificaciones Push',
@@ -2107,12 +2162,11 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 },
               ),
               SizedBox(
-                height:
-                    _isMobile(context)
-                        ? 12
-                        : _isDesktop(context)
-                        ? 20
-                        : 16,
+                height: _isMobile(context)
+                    ? 12
+                    : _isDesktop(context)
+                        ? 16
+                        : 14,
               ),
               _buildNotificationChannel(
                 title: 'Correo Electrónico',
@@ -2126,11 +2180,10 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 },
               ),
               SizedBox(
-                height:
-                    _isMobile(context)
-                        ? 20
-                        : _isDesktop(context)
-                        ? 32
+                height: _isMobile(context)
+                    ? 20
+                    : _isDesktop(context)
+                        ? 28
                         : 24,
               ),
 
@@ -2157,11 +2210,10 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                     backgroundColor: const Color(0xFFD97706),
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(
-                      vertical:
-                          _isMobile(context)
-                              ? 12
-                              : _isDesktop(context)
-                              ? 18
+                      vertical: _isMobile(context)
+                          ? 12
+                          : _isDesktop(context)
+                              ? 16
                               : 14,
                     ),
                     shape: RoundedRectangleBorder(
@@ -2177,18 +2229,17 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                       Text(
                         '💾',
                         style: TextStyle(
-                          fontSize: _isDesktop(context) ? 18 : 16,
+                          fontSize: _isDesktop(context) ? 16 : 14,
                         ),
                       ),
-                      SizedBox(width: _isDesktop(context) ? 12 : 8),
+                      SizedBox(width: _isDesktop(context) ? 10 : 8),
                       Text(
                         'Guardar Configuración',
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
-                          fontSize:
-                              _isMobile(context)
-                                  ? 14
-                                  : _isDesktop(context)
+                          fontSize: _isMobile(context)
+                              ? 14
+                              : _isDesktop(context)
                                   ? 16
                                   : 15,
                         ),
@@ -2217,8 +2268,8 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
         _isMobile(context)
             ? 12
             : _isDesktop(context)
-            ? 20
-            : 16,
+                ? 18
+                : 15,
       ),
       decoration: BoxDecoration(
         color: isEnabled ? const Color(0xFFFEF3C7) : Colors.grey[100],
@@ -2236,10 +2287,9 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 Text(
                   title,
                   style: GoogleFonts.poppins(
-                    fontSize:
-                        _isMobile(context)
-                            ? 16
-                            : _isDesktop(context)
+                    fontSize: _isMobile(context)
+                        ? 16
+                        : _isDesktop(context)
                             ? 18
                             : 17,
                     fontWeight: FontWeight.w600,
@@ -2249,10 +2299,9 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 Text(
                   subtitle,
                   style: GoogleFonts.poppins(
-                    fontSize:
-                        _isMobile(context)
-                            ? 14
-                            : _isDesktop(context)
+                    fontSize: _isMobile(context)
+                        ? 14
+                        : _isDesktop(context)
                             ? 16
                             : 15,
                     color: isEnabled ? Colors.black54 : Colors.grey,
@@ -2270,20 +2319,18 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
             ),
           ),
           SizedBox(
-            width:
-                _isMobile(context)
-                    ? 8
-                    : _isDesktop(context)
-                    ? 16
-                    : 12,
+            width: _isMobile(context)
+                ? 8
+                : _isDesktop(context)
+                    ? 12
+                    : 10,
           ),
           Icon(
             icon,
             color: isEnabled ? const Color(0xFFD97706) : Colors.grey,
-            size:
-                _isMobile(context)
-                    ? 24
-                    : _isDesktop(context)
+            size: _isMobile(context)
+                ? 24
+                : _isDesktop(context)
                     ? 28
                     : 26,
           ),
@@ -2304,8 +2351,8 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
         _isMobile(context)
             ? 12
             : _isDesktop(context)
-            ? 18
-            : 14,
+                ? 16
+                : 14,
       ),
       decoration: BoxDecoration(
         color: isEnabled ? const Color(0xFFFEF3C7) : Colors.grey[100],
@@ -2318,19 +2365,17 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
         children: [
           Icon(
             icon,
-            size:
-                _isMobile(context)
-                    ? 20
-                    : _isDesktop(context)
+            size: _isMobile(context)
+                ? 20
+                : _isDesktop(context)
                     ? 24
                     : 22,
             color: isEnabled ? const Color(0xFF92400E) : Colors.grey,
           ),
           SizedBox(
-            width:
-                _isMobile(context)
-                    ? 12
-                    : _isDesktop(context)
+            width: _isMobile(context)
+                ? 12
+                : _isDesktop(context)
                     ? 16
                     : 14,
           ),
@@ -2338,10 +2383,9 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
             child: Text(
               title,
               style: GoogleFonts.poppins(
-                fontSize:
-                    _isMobile(context)
-                        ? 14
-                        : _isDesktop(context)
+                fontSize: _isMobile(context)
+                    ? 14
+                    : _isDesktop(context)
                         ? 16
                         : 15,
                 fontWeight: FontWeight.w500,
@@ -2375,8 +2419,8 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
         _isMobile(context)
             ? 12
             : _isDesktop(context)
-            ? 18
-            : 14,
+                ? 16
+                : 14,
       ),
       decoration: BoxDecoration(
         color: isEnabled ? const Color(0xFFFEF3C7) : Colors.grey[100],
@@ -2392,8 +2436,8 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
               _isMobile(context)
                   ? 8
                   : _isDesktop(context)
-                  ? 12
-                  : 10,
+                      ? 12
+                      : 10,
             ),
             decoration: BoxDecoration(
               color: isEnabled ? const Color(0xFFFEF3C7) : Colors.grey[200],
@@ -2401,20 +2445,18 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
             ),
             child: Icon(
               icon,
-              size:
-                  _isMobile(context)
-                      ? 20
-                      : _isDesktop(context)
+              size: _isMobile(context)
+                  ? 20
+                  : _isDesktop(context)
                       ? 24
                       : 22,
               color: isEnabled ? const Color(0xFF92400E) : Colors.grey,
             ),
           ),
           SizedBox(
-            width:
-                _isMobile(context)
-                    ? 12
-                    : _isDesktop(context)
+            width: _isMobile(context)
+                ? 12
+                : _isDesktop(context)
                     ? 16
                     : 14,
           ),
@@ -2425,10 +2467,9 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 Text(
                   title,
                   style: GoogleFonts.poppins(
-                    fontSize:
-                        _isMobile(context)
-                            ? 14
-                            : _isDesktop(context)
+                    fontSize: _isMobile(context)
+                        ? 14
+                        : _isDesktop(context)
                             ? 16
                             : 15,
                     fontWeight: FontWeight.w600,
@@ -2438,10 +2479,9 @@ class _QueenReplacementScreenState extends State<QueenReplacementScreen>
                 Text(
                   subtitle,
                   style: GoogleFonts.poppins(
-                    fontSize:
-                        _isMobile(context)
-                            ? 12
-                            : _isDesktop(context)
+                    fontSize: _isMobile(context)
+                        ? 12
+                        : _isDesktop(context)
                             ? 14
                             : 13,
                     color: isEnabled ? Colors.black54 : Colors.grey,
